@@ -50,6 +50,7 @@ The application also implements CQRS (Command Query Responsibility Segregation) 
 
 ## 📁 Project Structure
 
+```
 ElectricityShop/
 ├── ElectricityShop.sln
 ├── src/
@@ -63,6 +64,7 @@ ElectricityShop/
     ├── ElectricityShop.Domain.Tests/
     ├── ElectricityShop.Application.Tests/
     └── ElectricityShop.API.Tests/
+```
 
 ## ✨ Features
 
@@ -85,32 +87,33 @@ ElectricityShop/
 ### Installation
 
 1. Clone the repository:
-   bash
+   ```bash
    git clone https://github.com/yourusername/ElectricityShop.git
    cd ElectricityShop
-   
+   ```
 
 2. Restore dependencies:
-   bash
+   ```bash
    dotnet restore
-   
+   ```
 
 3. Set up the database:
    The application will automatically create and migrate the database on first run, or you can manually apply migrations:
-   
+   ```bash
    cd src/ElectricityShop.API
    dotnet ef database update
-   
+   ```
 
 4. Run the API:
-   bash
+   ```bash
    dotnet run
+   ```
 
 ### Configuration
 
-Update connection strings and other settings in \`appsettings.json\`:
+Update connection strings and other settings in `appsettings.json`:
 
-json
+```json
 "ConnectionStrings": {
   "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=ElectricityShopDb;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True",
   "IdentityConnection": "Server=(localdb)\\MSSQLLocalDB;Database=ElectricityShopIdentityDb;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True"
@@ -122,33 +125,34 @@ json
   "VirtualHost": "/",
   "ExchangeName": "electricity_shop_exchange"
 }
+```
 
 ## 📝 API Documentation
 
 ### Authentication
-- \`POST /api/auth/register\` - Register a new user
-- \`POST /api/auth/login\` - Login and get JWT token
-- \`POST /api/auth/refresh\` - Refresh token
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login and get JWT token
+- `POST /api/auth/refresh` - Refresh token
 
 ### Products
-- \`GET /api/products\` - Get all products (with filtering)
-- \`GET /api/products/{id}\` - Get product by ID
-- \`POST /api/products\` - Create new product (Admin)
-- \`PUT /api/products/{id}\` - Update product (Admin)
-- \`DELETE /api/products/{id}\` - Delete product (Admin)
+- `GET /api/products` - Get all products (with filtering)
+- `GET /api/products/{id}` - Get product by ID
+- `POST /api/products` - Create new product (Admin)
+- `PUT /api/products/{id}` - Update product (Admin)
+- `DELETE /api/products/{id}` - Delete product (Admin)
 
 ### Cart
-- \`GET /api/cart\` - Get current user's cart
-- \`POST /api/cart/items\` - Add item to cart
-- \`PUT /api/cart/items/{id}\` - Update cart item
-- \`DELETE /api/cart/items/{id}\` - Remove item from cart
+- `GET /api/cart` - Get current user's cart
+- `POST /api/cart/items` - Add item to cart
+- `PUT /api/cart/items/{id}` - Update cart item
+- `DELETE /api/cart/items/{id}` - Remove item from cart
 
 ### Orders
-- \`GET /api/orders\` - Get user's orders
-- \`GET /api/orders/{id}\` - Get specific order
-- \`POST /api/orders\` - Create new order
-- \`PUT /api/orders/{id}/cancel\` - Cancel order
-- \`POST /api/orders/{id}/pay\` - Process payment
+- `GET /api/orders` - Get user's orders
+- `GET /api/orders/{id}` - Get specific order
+- `POST /api/orders` - Create new order
+- `PUT /api/orders/{id}/cancel` - Cancel order
+- `POST /api/orders/{id}/pay` - Process payment
 
 ## 🛣️ Development Roadmap
 
@@ -180,9 +184,9 @@ json
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
-2. Create your feature branch (\`git checkout -b feature/amazing-feature\`)
-3. Commit your changes (\`git commit -m 'Add some amazing feature'\`)
-4. Push to the branch (\`git push origin feature/amazing-feature\`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## 📄 License

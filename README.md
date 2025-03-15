@@ -50,7 +50,6 @@ The application also implements CQRS (Command Query Responsibility Segregation) 
 
 ## 📁 Project Structure
 
-\`\`\`
 ElectricityShop/
 ├── ElectricityShop.sln
 ├── src/
@@ -64,7 +63,6 @@ ElectricityShop/
     ├── ElectricityShop.Domain.Tests/
     ├── ElectricityShop.Application.Tests/
     └── ElectricityShop.API.Tests/
-\`\`\`
 
 ## ✨ Features
 
@@ -87,33 +85,32 @@ ElectricityShop/
 ### Installation
 
 1. Clone the repository:
-   \`\`\`bash
+   bash
    git clone https://github.com/yourusername/ElectricityShop.git
    cd ElectricityShop
-   \`\`\`
+   
 
 2. Restore dependencies:
-   \`\`\`bash
+   bash
    dotnet restore
-   \`\`\`
+   
 
 3. Set up the database:
    The application will automatically create and migrate the database on first run, or you can manually apply migrations:
-   \`\`\`bash
+   
    cd src/ElectricityShop.API
    dotnet ef database update
-   \`\`\`
+   
 
 4. Run the API:
-   \`\`\`bash
+   bash
    dotnet run
-   \`\`\`
 
 ### Configuration
 
 Update connection strings and other settings in \`appsettings.json\`:
 
-\`\`\`json
+json
 "ConnectionStrings": {
   "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=ElectricityShopDb;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True",
   "IdentityConnection": "Server=(localdb)\\MSSQLLocalDB;Database=ElectricityShopIdentityDb;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True"
@@ -125,7 +122,6 @@ Update connection strings and other settings in \`appsettings.json\`:
   "VirtualHost": "/",
   "ExchangeName": "electricity_shop_exchange"
 }
-\`\`\`
 
 ## 📝 API Documentation
 

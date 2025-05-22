@@ -5,16 +5,17 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using ElectricityShop.Domain.Entities;
 using ElectricityShop.Domain.Interfaces;
-using ElectricityShop.Infrastructure.Persistence.Context;
+using ElectricityShop.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace ElectricityShop.Infrastructure.Persistence.Repositories
 {
     public class Repository<T> : IRepository<T> where T : BaseEntity
     {
-        protected readonly ApplicationDbContext _dbContext;
+        protected readonly IApplicationDbContext _dbContext;
 
-        public Repository(ApplicationDbContext dbContext)
+        public Repository(IApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
         }

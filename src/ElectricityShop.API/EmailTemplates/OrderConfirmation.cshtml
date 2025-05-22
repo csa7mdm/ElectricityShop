@@ -1,0 +1,112 @@
+@model dynamic
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Order Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #4a7aff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 10px 20px;
+            font-size: 12px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .total-row {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Order Confirmation</h1>
+    </div>
+    <div class="content">
+        <p>Dear @Model.CustomerName,</p>
+        <p>Thank you for your order! We're pleased to confirm that we've received your order and it's being processed.</p>
+        
+        <h2>Order Details</h2>
+        <p><strong>Order Number:</strong> @Model.OrderNumber</p>
+        <p><strong>Order Date:</strong> @Model.OrderDate</p>
+        
+        <h2>Items Ordered</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.Quantity</td>
+                    <td>$@item.Price.ToString("0.00")</td>
+                    <td>$@item.TotalPrice.ToString("0.00")</td>
+                </tr>
+                }
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
+                    <td>$@Model.Subtotal.ToString("0.00")</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Tax:</strong></td>
+                    <td>$@Model.Tax.ToString("0.00")</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Shipping:</strong></td>
+                    <td>$@Model.ShippingCost.ToString("0.00")</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+                    <td>$@Model.TotalAmount.ToString("0.00")</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <p>You will receive another email when your order ships.</p>
+        
+        <p>If you have any questions about your order, please contact our customer service team at @Model.SupportEmail.</p>
+        
+        <p>Thank you for shopping with us!</p>
+        
+        <p>Sincerely,<br />The @Model.StoreName Team</p>
+    </div>
+    <div class="footer">
+        <p>@Model.StoreName<br />@Model.StoreAddress</p>
+        <p>&copy; @DateTime.Now.Year @Model.StoreName. All rights reserved.</p>
+    </div>
+</body>
+</html>

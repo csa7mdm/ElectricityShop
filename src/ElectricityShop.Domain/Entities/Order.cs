@@ -1,21 +1,36 @@
 using System;
 using System.Collections.Generic;
-using ElectricityShop.Domain.Enums;
 
 namespace ElectricityShop.Domain.Entities
 {
+    /// <summary>
+    /// Represents an order
+    /// </summary>
     public class Order : BaseEntity
     {
-        public required string OrderNumber { get; set; }
-        public OrderStatus Status { get; set; }
+        /// <summary>
+        /// Gets or sets the customer ID
+        /// </summary>
+        public Guid CustomerId { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the order status
+        /// </summary>
+        public string Status { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the order date
+        /// </summary>
+        public DateTime OrderDate { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the total amount
+        /// </summary>
         public decimal TotalAmount { get; set; }
-        public PaymentMethod PaymentMethod { get; set; }
-        public bool IsPaid { get; set; }
-        public DateTime? PaidAt { get; set; }
-        public required string ShippingAddress { get; set; }
-        public required string BillingAddress { get; set; }
-        public Guid UserId { get; set; }
-        public User? User { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the order items
+        /// </summary>
         public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 }

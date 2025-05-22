@@ -29,9 +29,15 @@ namespace ElectricityShop.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDto>> GetProduct(Guid id)
         {
-            // You would implement a GetProductByIdQuery
-            // For now, we'll just return a 501 Not Implemented
-            return StatusCode(501);
+            var query = new GetProductByIdQuery { ProductId = id };
+            var productDto = await _mediator.Send(query);
+
+            if (productDto == null)
+            {
+                return NotFound($"Product with ID {id} not found.");
+            }
+
+            return Ok(productDto);
         }
 
         [HttpPost]
@@ -46,29 +52,35 @@ namespace ElectricityShop.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductCommand command)
         {
-            // You would implement an UpdateProductCommand
-            // For now, we'll just return a 501 Not Implemented
-            return StatusCode(501);
+            command.Id = id; // Set the Id from the route parameter
+
+            var success = await _mediator.Send(command);
+
+            if (success)
+            {
+                return Ok(); // Or NoContent()
+            }
+            else
+            {
+                return NotFound($"Product with ID {id} not found or update failed.");
+            }
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteProduct(Guid id)
         {
-            // You would implement a DeleteProductCommand
-            // For now, we'll just return a 501 Not Implemented
-            return StatusCode(501);
-        }
-    }
+            var command = new DeleteProductCommand { ProductId = id };
+            var success = await _mediator.Send(command);
 
-    public class UpdateProductCommand : IRequest<bool>
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public decimal Price { get; set; }
-        public int StockQuantity { get; set; }
-        public Guid CategoryId { get; set; }
-        public bool IsActive { get; set; }
+            if (success)
+            {
+                return NoContent(); // Successful deletion, no content to return
+            }
+            else
+            {
+                return NotFound($"Product with ID {id} not found.");
+            }
+        }
     }
 }

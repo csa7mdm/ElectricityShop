@@ -1,61 +1,90 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ElectricityShop.Application.Common.Interfaces;
+using ElectricityShop.Application.Features.Carts.Queries; // For CartDto, CartItemDto
+using ElectricityShop.Domain.Entities;      // For Cart, CartItem, Product, ProductImage
+using ElectricityShop.Domain.Interfaces;    // For IRepository
 using MediatR;
+using Microsoft.Extensions.Logging;         // For ILogger
 
 namespace ElectricityShop.Application.Features.Carts.Queries.Handlers
 {
-    public class GetCartQueryHandler : IRequestHandler<GetCartQuery, CartDto>
+    public class GetCartQueryHandler : IRequestHandler<GetCartQuery, CartDto?> // Return nullable CartDto
     {
-        // Assuming you have a way to get cart data, e.g., via a repository or service
-        // For now, we'll return a dummy CartDto.
-        // In a real implementation, you would inject IApplicationDbContext or ICartRepository
-        // and fetch data from the database.
+        private readonly IRepository<Cart> _cartRepository;
+        private readonly IRepository<Product> _productRepository; // Added as per refined instructions
+        private readonly ILogger<GetCartQueryHandler> _logger;
 
-        public GetCartQueryHandler() // Add dependencies here when ready
+        public GetCartQueryHandler(
+            IRepository<Cart> cartRepository, 
+            IRepository<Product> productRepository, // Added
+            ILogger<GetCartQueryHandler> logger)
         {
+            _cartRepository = cartRepository;
+            _productRepository = productRepository; // Added
+            _logger = logger;
         }
 
-        public async Task<CartDto> Handle(GetCartQuery request, CancellationToken cancellationToken)
+        public async Task<CartDto?> Handle(GetCartQuery request, CancellationToken cancellationToken)
         {
-            // Simulate fetching cart data
-            // In a real scenario, you would:
-            // 1. Query the database for the cart associated with request.UserId
-            // 2. If found, map the cart entity and its items to CartDto and CartItemDto
-            // 3. If not found, you might return null or throw a NotFoundException
+            _logger.LogInformation("Attempting to fetch cart for UserId: {UserId}", request.UserId);
 
-            await Task.Delay(50); // Simulate async work
+            // Crucial: Repository implementation for FirstOrDefaultAsync (or a specific GetByUserIdAsync)
+            // should handle .Include() for Items, Items.Product, and Product.Images.
+            var cart = await _cartRepository.FirstOrDefaultAsync(c => c.UserId == request.UserId);
 
-            // Dummy data for now
-            if (request.UserId == Guid.Empty) // Or some other logic to simulate not found
+            if (cart == null)
             {
-                return null; 
+                _logger.LogWarning("No cart found for UserId: {UserId}", request.UserId);
+                return null;
             }
 
-            return new CartDto
+            _logger.LogInformation("Cart found for UserId: {UserId}. Mapping to CartDto.", request.UserId);
+
+            var cartDto = new CartDto
             {
-                CartId = Guid.NewGuid(), // This would be the actual cart ID from DB
-                UserId = request.UserId,
-                Items = new List<CartItemDto>
+                Id = cart.Id,
+                UserId = cart.UserId,
+                Items = new List<CartItemDto>()
+            };
+
+            foreach (var item in cart.Items)
+            {
+                Product? productDetails = item.Product;
+
+                // Fallback: If product details were not loaded with the cart, fetch them.
+                // This indicates an N+1 problem if it happens for many items.
+                // The primary query for the cart should ideally include all necessary data.
+                if (productDetails == null)
                 {
-                    new CartItemDto
+                    _logger.LogWarning("Product details for ProductId {ProductId} in CartId {CartId} were not loaded. Fetching separately.", item.ProductId, cart.Id);
+                    productDetails = await _productRepository.GetByIdAsync(item.ProductId);
+                    if (productDetails == null)
                     {
-                        ProductId = Guid.NewGuid(),
-                        ProductName = "Sample Product 1",
-                        UnitPrice = 10.99m,
-                        Quantity = 2
-                    },
-                    new CartItemDto
-                    {
-                        ProductId = Guid.NewGuid(),
-                        ProductName = "Sample Product 2",
-                        UnitPrice = 5.49m,
-                        Quantity = 1
+                         _logger.LogError("Failed to fetch product details for ProductId {ProductId}. Skipping item.", item.ProductId);
+                        continue; // Skip this item if product details can't be found
                     }
                 }
-            };
+                
+                // Ensure UnitPrice in CartItem entity is used, as this is the price at the time of adding to cart.
+                cartDto.Items.Add(new CartItemDto
+                {
+                    ProductId = item.ProductId,
+                    ProductName = productDetails.Name, 
+                    UnitPrice = item.UnitPrice, // This should come from CartItem.UnitPrice
+                    Quantity = item.Quantity,
+                    // TotalPrice is a calculated property in CartItemDto (UnitPrice * Quantity)
+                    ProductImageUrl = productDetails.Images?.FirstOrDefault(img => img.IsMain)?.ImageUrl
+                });
+            }
+            
+            // GrandTotal and TotalItems are calculated properties in CartDto.
+            // They will be computed automatically based on the populated Items list.
+
+            _logger.LogInformation("Successfully mapped cart to CartDto for UserId: {UserId}. Item count: {ItemCount}", request.UserId, cartDto.Items.Count);
+            return cartDto;
         }
     }
 }

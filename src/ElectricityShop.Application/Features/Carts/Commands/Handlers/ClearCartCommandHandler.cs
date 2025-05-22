@@ -1,56 +1,59 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ElectricityShop.Application.Common.Interfaces; // For IApplicationDbContext or repositories
+using ElectricityShop.Application.Features.Carts.Commands; // For ClearCartCommand
+using ElectricityShop.Domain.Entities;      // For Cart
+using ElectricityShop.Domain.Interfaces;    // For IRepository
 using MediatR;
-using Microsoft.Extensions.Logging; // Optional: for logging
+using Microsoft.Extensions.Logging;         // For ILogger
+using System.Collections.Generic;           // For List<CartItem>
 
 namespace ElectricityShop.Application.Features.Carts.Commands.Handlers
 {
     public class ClearCartCommandHandler : IRequestHandler<ClearCartCommand, Unit>
     {
         private readonly ILogger<ClearCartCommandHandler> _logger;
-        // private readonly IRepository<Cart> _cartRepository; // Or a specific ICartRepository
+        private readonly IRepository<Cart> _cartRepository;
 
-        public ClearCartCommandHandler(ILogger<ClearCartCommandHandler> logger /*, IRepository<Cart> cartRepository */)
+        public ClearCartCommandHandler(
+            ILogger<ClearCartCommandHandler> logger,
+            IRepository<Cart> cartRepository)
         {
             _logger = logger;
-            // _cartRepository = cartRepository;
+            _cartRepository = cartRepository;
         }
 
         public async Task<Unit> Handle(ClearCartCommand request, CancellationToken cancellationToken)
         {
-            _logger?.LogInformation("Attempting to clear cart for UserId: {UserId}", request.UserId);
+            _logger.LogInformation("Attempting to clear cart for UserId: {UserId}", request.UserId);
 
-            // Simulate business logic:
-            // 1. Find the user's cart.
-            //    var cart = await _cartRepository.FirstOrDefaultAsync(c => c.UserId == request.UserId);
-            //    if (cart != null)
-            //    {
-            //        // 2. Clear items from the cart.
-            //        cart.Items.Clear();
-            //        cart.UpdatedAt = DateTime.UtcNow;
-            //
-            //        // 3. Save changes.
-            //        await _cartRepository.UpdateAsync(cart);
-            //
-            //        _logger?.LogInformation("Cart cleared successfully for UserId: {UserId}", request.UserId);
-            //    }
-            //    else
-            //    {
-            //        _logger?.LogWarning("No cart found to clear for UserId: {UserId}", request.UserId);
-            //        // Depending on requirements, this might not be an error.
-            //        // If a cart must exist, you might throw a NotFoundException.
-            //    }
+            // Fetch Cart
+            var cart = await _cartRepository.FirstOrDefaultAsync(c => c.UserId == request.UserId);
 
-            // Simulate async work
-            await Task.Delay(50, cancellationToken);
+            if (cart == null)
+            {
+                _logger.LogInformation("No cart found for UserId: {UserId}. Operation considered successful as cart is already clear.", request.UserId);
+                return Unit.Value; // Idempotent: if no cart, it's "clear"
+            }
+
+            // Clear Items if cart exists
+            // Ensure Items collection is not null before clearing, though it should be initialized by EF Core
+            cart.Items ??= new List<CartItem>();
+            if (cart.Items.Any()) 
+            {
+                _logger.LogInformation("Cart found for UserId: {UserId} with {ItemCount} items. Clearing items.", request.UserId, cart.Items.Count);
+                cart.Items.Clear();
+
+                // Persist Changes
+                await _cartRepository.UpdateAsync(cart);
+                _logger.LogInformation("Cart items cleared and changes persisted for UserId: {UserId}, CartId: {CartId}", request.UserId, cart.Id);
+            }
+            else
+            {
+                _logger.LogInformation("Cart found for UserId: {UserId} but it already has no items. No changes needed.", request.UserId);
+            }
             
-            // For now, we assume the operation is successful even if the cart didn't exist or was already empty.
-            // If specific feedback for "cart not found" is needed, the command could return a bool or a custom result type.
-            _logger?.LogInformation("Cart clear operation completed for UserId: {UserId}", request.UserId);
-
-            return Unit.Value; // Indicates success
+            return Unit.Value;
         }
     }
 }

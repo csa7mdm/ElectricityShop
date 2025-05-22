@@ -8,6 +8,10 @@ using MediatR;
 
 namespace ElectricityShop.Application.Features.Products.Commands
 {
+using System.Collections.Generic;
+
+namespace ElectricityShop.Application.Features.Products.Commands
+{
     public class CreateProductCommand : IRequest<Guid>
     {
         public string Name { get; set; }

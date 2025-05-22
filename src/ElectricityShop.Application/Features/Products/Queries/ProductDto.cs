@@ -12,6 +12,7 @@ namespace ElectricityShop.Application.Features.Products.Queries
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; } // Assuming you want to show category name
         public bool IsActive { get; set; }
-        // Add other relevant properties like images, attributes, etc.
+        public List<ProductImageDto> Images { get; set; } = new List<ProductImageDto>();
+        public List<ProductAttributeDto> Attributes { get; set; } = new List<ProductAttributeDto>();
     }
 }

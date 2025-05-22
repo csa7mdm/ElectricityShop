@@ -1,73 +1,94 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ElectricityShop.Application.Common.Interfaces; // For IApplicationDbContext or repositories
+using ElectricityShop.Application.Common.Interfaces; // For IApplicationDbContext or if IRepository is there
+using ElectricityShop.Application.Features.Products.Queries; // For ProductDto, ProductImageDto, ProductAttributeDto
+using ElectricityShop.Domain.Entities;
+using ElectricityShop.Domain.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Logging; // Optional: for logging
-using System.Collections.Generic; // For dummy data list
+using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.Application.Features.Products.Queries.Handlers
 {
     public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, ProductDto>
     {
         private readonly ILogger<GetProductByIdQueryHandler> _logger;
-        // private readonly IRepository<Product> _productRepository; // Or IApplicationDbContext
+        private readonly IRepository<Product> _productRepository;
+        private readonly IRepository<Category> _categoryRepository;
 
-        // Dummy product list for simulation
-        private static readonly List<ProductDto> _dummyProducts = new List<ProductDto>
-        {
-            new ProductDto { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), Name = "Laptop Pro", Description = "High-end laptop", Price = 1200.00m, StockQuantity = 50, CategoryId = Guid.NewGuid(), CategoryName = "Electronics", IsActive = true },
-            new ProductDto { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Name = "Wireless Mouse", Description = "Ergonomic wireless mouse", Price = 25.00m, StockQuantity = 200, CategoryId = Guid.NewGuid(), CategoryName = "Accessories", IsActive = true },
-            new ProductDto { Id = Guid.Parse("20000000-0000-0000-0000-000000000003"), Name = "Mechanical Keyboard", Description = "RGB Mechanical Keyboard", Price = 75.00m, StockQuantity = 100, CategoryId = Guid.NewGuid(), CategoryName = "Accessories", IsActive = false } // Inactive product
-        };
-
-        public GetProductByIdQueryHandler(ILogger<GetProductByIdQueryHandler> logger /*, IRepository<Product> productRepository */)
+        public GetProductByIdQueryHandler(
+            ILogger<GetProductByIdQueryHandler> logger,
+            IRepository<Product> productRepository,
+            IRepository<Category> categoryRepository)
         {
             _logger = logger;
-            // _productRepository = productRepository;
+            _productRepository = productRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<ProductDto> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
         {
-            _logger?.LogInformation("Attempting to fetch product by ID: {ProductId}", request.ProductId);
+            _logger?.LogInformation("Attempting to fetch product by ID: {ProductId} from database", request.ProductId);
 
-            // Simulate business logic:
-            // 1. Query the database for the product.
-            //    var product = await _productRepository.GetByIdAsync(request.ProductId);
-            //    
-            //    if (product == null || !product.IsActive) // Optionally filter by IsActive here or let client decide
-            //    {
-            //        _logger?.LogWarning("Product not found or not active. ProductId: {ProductId}", request.ProductId);
-            //        return null;
-            //    }
-            //
-            // 2. Map the Product entity to ProductDto.
-            //    return new ProductDto
-            //    {
-            //        Id = product.Id,
-            //        Name = product.Name,
-            //        Description = product.Description,
-            //        Price = product.Price,
-            //        StockQuantity = product.StockQuantity,
-            //        CategoryId = product.CategoryId,
-            //        CategoryName = product.Category?.Name, // Assuming Category navigation property
-            //        IsActive = product.IsActive
-            //    };
-
-            // Simulate async work
-            await Task.Delay(50, cancellationToken);
-
-            // Dummy data simulation:
-            var product = _dummyProducts.FirstOrDefault(p => p.Id == request.ProductId);
-
-            if (product != null) // For this simulation, we return even if IsActive is false, controller can decide
+            // The IRepository.GetByIdAsync is expected to handle includes or eager loading if necessary.
+            // For this example, we assume product.Images and product.Attributes are populated.
+            // Category might need a separate fetch if not included.
+            var product = await _productRepository.GetByIdAsync(request.ProductId);
+            
+            if (product == null)
             {
-                _logger?.LogInformation("Simulated product found for ProductId: {ProductId}", request.ProductId);
-                return product;
+                _logger?.LogWarning("Product not found in database. ProductId: {ProductId}", request.ProductId);
+                return null;
             }
 
-            _logger?.LogWarning("Simulated product not found for ProductId: {ProductId}", request.ProductId);
-            return null; // Product not found
+            string categoryName = "N/A"; // Default category name
+            if (product.CategoryId != Guid.Empty)
+            {
+                // Attempt to get category name.
+                // If product.Category is null (not eagerly loaded with the product), fetch it.
+                var category = product.Category ?? await _categoryRepository.GetByIdAsync(product.CategoryId);
+                if (category != null)
+                {
+                    categoryName = category.Name;
+                }
+                else
+                {
+                     _logger?.LogWarning("Category not found for CategoryId: {CategoryId} associated with ProductId: {ProductId}", product.CategoryId, product.Id);
+                }
+            }
+            else
+            {
+                 _logger?.LogInformation("Product {ProductId} has no CategoryId.", product.Id);
+            }
+            
+            var productDto = new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity,
+                CategoryId = product.CategoryId,
+                CategoryName = categoryName,
+                IsActive = product.IsActive,
+                Images = product.Images?.Select(img => new ProductImageDto
+                {
+                    Id = img.Id,
+                    ImageUrl = img.ImageUrl,
+                    IsMain = img.IsMain
+                }).ToList() ?? new List<ProductImageDto>(),
+                Attributes = product.Attributes?.Select(attr => new ProductAttributeDto
+                {
+                    Id = attr.Id,
+                    Name = attr.Name,
+                    Value = attr.Value
+                }).ToList() ?? new List<ProductAttributeDto>()
+            };
+
+            _logger?.LogInformation("Product found and mapped to DTO. ProductId: {ProductId}", request.ProductId);
+            return productDto;
         }
     }
 }

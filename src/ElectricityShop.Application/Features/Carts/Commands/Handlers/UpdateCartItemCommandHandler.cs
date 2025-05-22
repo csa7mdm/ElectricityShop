@@ -1,85 +1,92 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ElectricityShop.Application.Common.Interfaces; // For IApplicationDbContext or repositories
+using ElectricityShop.Application.Features.Carts.Commands; // For UpdateCartItemCommand
+using ElectricityShop.Domain.Entities;
+using ElectricityShop.Domain.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Logging; // Optional: for logging
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic; // For List<CartItem>
 
 namespace ElectricityShop.Application.Features.Carts.Commands.Handlers
 {
     public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemCommand, bool>
     {
         private readonly ILogger<UpdateCartItemCommandHandler> _logger;
-        // private readonly IRepository<Cart> _cartRepository; // Or a specific ICartRepository
-        // private readonly IRepository<Product> _productRepository; // For stock checks if quantity increases
+        private readonly IRepository<Product> _productRepository;
+        private readonly IRepository<Cart> _cartRepository;
 
-        public UpdateCartItemCommandHandler(ILogger<UpdateCartItemCommandHandler> logger /*, IRepository<Cart> cartRepository, IRepository<Product> productRepository */)
+        public UpdateCartItemCommandHandler(
+            ILogger<UpdateCartItemCommandHandler> logger,
+            IRepository<Product> productRepository,
+            IRepository<Cart> cartRepository)
         {
             _logger = logger;
-            // _cartRepository = cartRepository;
-            // _productRepository = productRepository;
+            _productRepository = productRepository;
+            _cartRepository = cartRepository;
         }
 
         public async Task<bool> Handle(UpdateCartItemCommand request, CancellationToken cancellationToken)
         {
-            _logger?.LogInformation("Attempting to update cart item. UserId: {UserId}, ProductId: {ProductId}, NewQuantity: {NewQuantity}", request.UserId, request.ProductId, request.NewQuantity);
+            _logger.LogInformation("Attempting to update cart item. UserId: {UserId}, ProductId: {ProductId}, NewQuantity: {NewQuantity}",
+                request.UserId, request.ProductId, request.NewQuantity);
 
-            if (request.NewQuantity <= 0)
+            // Fetch Cart (ensure Items are loaded by repository configuration)
+            var cart = await _cartRepository.FirstOrDefaultAsync(c => c.UserId == request.UserId);
+            if (cart == null)
             {
-                _logger?.LogWarning("Invalid quantity for update: {NewQuantity}. Must be greater than 0. UserId: {UserId}, ProductId: {ProductId}", request.NewQuantity, request.UserId, request.ProductId);
-                // Consider throwing an ArgumentException or similar, or let controller handle via return code
-                return false; // Indicate failure due to invalid input for now
+                _logger.LogWarning("Cart not found for UserId: {UserId}", request.UserId);
+                return false; // Cart not found
+            }
+            cart.Items ??= new List<CartItem>(); // Ensure Items collection is initialized
+
+            // Find CartItem using request.ProductId (which identifies the Product in the cart)
+            var cartItem = cart.Items.FirstOrDefault(ci => ci.ProductId == request.ProductId);
+            if (cartItem == null)
+            {
+                _logger.LogWarning("CartItem with ProductId: {ProductId} not found in CartId: {CartId} for UserId: {UserId}",
+                    request.ProductId, cart.Id, request.UserId);
+                return false; // Item not in cart
             }
 
-            // Simulate business logic:
-            // 1. Find the user's cart.
-            //    var cart = await _cartRepository.FirstOrDefaultAsync(c => c.UserId == request.UserId && c.Items.Any(i => i.ProductId == request.ProductId));
-            //    if (cart == null)
-            //    {
-            //        _logger?.LogWarning("Cart not found or item not in cart. UserId: {UserId}, ProductId: {ProductId}", request.UserId, request.ProductId);
-            //        return false; // Cart or item not found
-            //    }
-
-            // 2. Find the item in the cart.
-            //    var cartItem = cart.Items.FirstOrDefault(i => i.ProductId == request.ProductId);
-            //    if (cartItem == null) // Should be redundant if cart query in step 1 is specific enough
-            //    {
-            //        _logger?.LogWarning("Item not found in cart. UserId: {UserId}, ProductId: {ProductId}", request.UserId, request.ProductId);
-            //        return false; // Item not found
-            //    }
-
-            // 3. If quantity increases, check stock (similar to AddItemToCart).
-            //    if (request.NewQuantity > cartItem.Quantity)
-            //    {
-            //        var product = await _productRepository.GetByIdAsync(request.ProductId);
-            //        if (product == null || product.StockQuantity < (request.NewQuantity - cartItem.Quantity)) // Check additional quantity needed
-            //        {
-            //            _logger?.LogWarning("Insufficient stock for ProductId: {ProductId} during update.", request.ProductId);
-            //            throw new ApplicationException($"Insufficient stock for product ID {request.ProductId}."); // Or return false
-            //        }
-            //    }
-            
-            // 4. Update quantity:
-            //    cartItem.Quantity = request.NewQuantity;
-            //    cart.UpdatedAt = DateTime.UtcNow;
-
-            // 5. Save changes:
-            //    await _cartRepository.UpdateAsync(cart);
-
-            // Simulate async work
-            await Task.Delay(100, cancellationToken);
-
-            // Simulate item found and updated
-            var itemFoundAndUpdated = true; // Change this to false to test NotFound case
-
-            if (!itemFoundAndUpdated)
+            // If NewQuantity is 0, remove the item
+            if (request.NewQuantity == 0)
             {
-                _logger?.LogWarning("Cart item not found for update. UserId: {UserId}, ProductId: {ProductId}", request.UserId, request.ProductId);
-                return false;
+                _logger.LogInformation("NewQuantity is 0. Removing ProductId: {ProductId} from CartId: {CartId}", request.ProductId, cart.Id);
+                cart.Items.Remove(cartItem);
             }
-            
-            _logger?.LogInformation("Cart item updated successfully. UserId: {UserId}, ProductId: {ProductId}, NewQuantity: {NewQuantity}", request.UserId, request.ProductId, request.NewQuantity);
-            return true; // Indicates success
+            else // NewQuantity > 0, update quantity
+            {
+                // Fetch Product for stock validation
+                var product = await _productRepository.GetByIdAsync(cartItem.ProductId);
+                if (product == null)
+                {
+                    _logger.LogError("Product details not found for ProductId: {ProductId} in CartItem {CartItemId}. This indicates a data integrity issue.",
+                        cartItem.ProductId, cartItem.Id);
+                    return false; // Should not happen if item is in cart, but safety check
+                }
+
+                // Check Stock if quantity is increasing
+                if (request.NewQuantity > cartItem.Quantity)
+                {
+                    int additionalQuantityNeeded = request.NewQuantity - cartItem.Quantity;
+                    if (product.StockQuantity < additionalQuantityNeeded)
+                    {
+                        _logger.LogWarning("Insufficient stock for ProductId: {ProductId} during update. Additional needed: {AdditionalQuantityNeeded}, Available: {AvailableStock}",
+                            request.ProductId, additionalQuantityNeeded, product.StockQuantity);
+                        return false; // Insufficient stock for the increase
+                    }
+                }
+                cartItem.Quantity = request.NewQuantity;
+            }
+
+            // Persist Changes
+            await _cartRepository.UpdateAsync(cart);
+
+            _logger.LogInformation("Cart item update/removal processed successfully for UserId: {UserId}, ProductId: {ProductId}, CartId: {CartId}",
+                request.UserId, request.ProductId, cart.Id);
+            return true;
         }
     }
 }

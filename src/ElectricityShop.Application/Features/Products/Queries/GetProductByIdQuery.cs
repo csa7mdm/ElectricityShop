@@ -1,16 +1,11 @@
+using System;
 using MediatR;
 using System;
 
 namespace ElectricityShop.Application.Features.Products.Queries
 {
-    /// <summary>
-    /// Query to get a product by its ID
-    /// </summary>
-    public class GetProductByIdQuery : IRequest<ProductDto>
+    public class GetProductByIdQuery : IRequest<ProductDto> // Returns ProductDto or null
     {
-        /// <summary>
-        /// ID of the product to retrieve
-        /// </summary>
-        public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
     }
 }

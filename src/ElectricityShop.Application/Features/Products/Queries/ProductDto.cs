@@ -37,40 +37,9 @@ namespace ElectricityShop.Application.Features.Products.Queries
         /// Category the product belongs to
         /// </summary>
         public Guid CategoryId { get; set; }
-        
-        /// <summary>
-        /// Name of the category
-        /// </summary>
-        public string CategoryName { get; set; }
-        
-        /// <summary>
-        /// Whether the product is active/available
-        /// </summary>
+        public string CategoryName { get; set; } // Assuming you want to show category name
         public bool IsActive { get; set; }
-        
-        /// <summary>
-        /// List of image URLs for the product
-        /// </summary>
-        public List<string> ImageUrls { get; set; }
-        
-        /// <summary>
-        /// Average rating for the product (1-5)
-        /// </summary>
-        public decimal? AverageRating { get; set; }
-        
-        /// <summary>
-        /// Number of reviews for the product
-        /// </summary>
-        public int ReviewCount { get; set; }
-        
-        /// <summary>
-        /// Whether the product is on sale
-        /// </summary>
-        public bool OnSale { get; set; }
-        
-        /// <summary>
-        /// Discount percentage if on sale
-        /// </summary>
-        public decimal? DiscountPercentage { get; set; }
+        public List<ProductImageDto> Images { get; set; } = new List<ProductImageDto>();
+        public List<ProductAttributeDto> Attributes { get; set; } = new List<ProductAttributeDto>();
     }
 }

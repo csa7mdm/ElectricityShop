@@ -8,19 +8,7 @@ namespace ElectricityShop.Application.Features.Orders.Queries
     /// </summary>
     public class OrderDto
     {
-        /// <summary>
-        /// Unique identifier for the order
-        /// </summary>
-        public Guid Id { get; set; }
-        
-        /// <summary>
-        /// Order number (for display purposes)
-        /// </summary>
-        public string OrderNumber { get; set; }
-        
-        /// <summary>
-        /// Date the order was placed
-        /// </summary>
+        public Guid OrderId { get; set; }
         public DateTime OrderDate { get; set; }
         
         /// <summary>

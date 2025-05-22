@@ -26,20 +26,31 @@ namespace ElectricityShop.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<OrderDto>> GetOrder(Guid id, CancellationToken cancellationToken)
         {
-            try
+            // Get current user ID from claims
+            var userId = Guid.Parse(User.FindFirst("id")?.Value);
+            query.UserId = userId;
+
+            return await _mediator.Send(query);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<OrderDto>> GetOrder(Guid id)
+        {
+            var userIdString = User.FindFirst("id")?.Value;
+            if (!Guid.TryParse(userIdString, out var userId))
             {
-                var order = await _orderService.GetOrderAsync(id, cancellationToken);
-                return Ok(order);
+                return Unauthorized("User ID claim is missing or invalid.");
             }
-            catch (KeyNotFoundException ex)
+
+            var query = new GetOrderByIdQuery { OrderId = id, UserId = userId };
+            var orderDto = await _mediator.Send(query);
+
+            if (orderDto == null)
             {
-                return NotFound(ex.Message);
+                return NotFound($"Order with ID {id} not found for the current user.");
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting order {OrderId}", id);
-                return StatusCode(500, "An error occurred while processing your request");
-            }
+
+            return Ok(orderDto);
         }
 
         [HttpPost]
@@ -61,70 +72,69 @@ namespace ElectricityShop.API.Controllers
             }
         }
 
-        [HttpPut("{id}/status")]
-        public async Task<ActionResult> UpdateOrderStatus(
-            Guid id, 
-            UpdateOrderStatusRequest request, 
-            CancellationToken cancellationToken)
+        [HttpPut("{id}/cancel")]
+        public async Task<ActionResult> CancelOrder(Guid id)
         {
-            try
+            var userIdString = User.FindFirst("id")?.Value;
+            if (!Guid.TryParse(userIdString, out var userId))
             {
-                await _orderService.UpdateOrderStatusAsync(
-                    id,
-                    request.NewStatus,
-                    request.UpdatedById,
-                    request.Notes,
-                    cancellationToken);
+                return Unauthorized("User ID claim is missing or invalid.");
+            }
 
-                return NoContent();
-            }
-            catch (KeyNotFoundException ex)
+            var command = new CancelOrderCommand { OrderId = id, UserId = userId };
+            var success = await _mediator.Send(command);
+
+            if (success)
             {
-                return NotFound(ex.Message);
+                return Ok(); // Or NoContent()
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error updating status for order {OrderId}", id);
-                return StatusCode(500, "An error occurred while processing your request");
+                // This could be due to order not found, not belonging to user, or not being in a cancelable state
+                return NotFound($"Order with ID {id} not found or cannot be canceled by the current user.");
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> CancelOrder(
-            Guid id, 
-            CancelOrderRequest request, 
-            CancellationToken cancellationToken)
+        [HttpPost("{id}/pay")]
+        public async Task<ActionResult> ProcessPayment(Guid id, [FromBody] ProcessPaymentRequest request)
         {
-            try
+            var userIdString = User.FindFirst("id")?.Value;
+            if (!Guid.TryParse(userIdString, out var userId))
             {
-                await _orderService.CancelOrderAsync(
-                    id,
-                    request.Reason,
-                    request.CancelledById,
-                    cancellationToken);
+                return Unauthorized("User ID claim is missing or invalid.");
+            }
 
-                return NoContent();
-            }
-            catch (KeyNotFoundException ex)
+            var command = new ProcessPaymentCommand
             {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
+                OrderId = id,
+                UserId = userId,
+                CardNumber = request.CardNumber,
+                CardHolderName = request.CardHolderName,
+                ExpiryMonth = request.ExpiryMonth,
+                ExpiryYear = request.ExpiryYear,
+                CVV = request.CVV,
+                BillingAddress = new Application.Features.Orders.Queries.AddressDto // Explicitly map
+                {
+                    Street = request.BillingAddress.AddressLine1, // Assuming AddressLine1 maps to Street
+                    City = request.BillingAddress.City,
+                    State = request.BillingAddress.State,
+                    ZipCode = request.BillingAddress.ZipCode,
+                    Country = request.BillingAddress.Country
+                    // Note: AddressLine2 is not in AddressDto, can be added if needed
+                }
+            };
+
+            var success = await _mediator.Send(command);
+
+            if (success)
             {
-                return BadRequest(ex.Message);
+                return Ok();
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error cancelling order {OrderId}", id);
-                return StatusCode(500, "An error occurred while processing your request");
+                return BadRequest("Payment failed or order cannot be processed.");
             }
         }
-    }
-
-    public class CreateOrderRequest
-    {
-        public Guid CustomerId { get; set; }
-        public List<OrderItemDto> Items { get; set; }
     }
 
     public class UpdateOrderStatusRequest

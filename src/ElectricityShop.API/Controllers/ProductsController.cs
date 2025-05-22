@@ -62,26 +62,17 @@ namespace ElectricityShop.API.Controllers
         [ResponseCache(CacheProfileName = "ProductDetail")]
         public async Task<ActionResult<ProductDto>> GetProduct(Guid id)
         {
-            var query = new GetProductByIdQuery { Id = id };
-            var product = await _mediator.Send(query);
+            var query = new GetProductByIdQuery { ProductId = id };
+            var productDto = await _mediator.Send(query);
 
-            if (product == null)
+            if (productDto == null)
             {
-                return NotFound();
+                return NotFound($"Product with ID {id} not found.");
             }
 
-            return product;
+            return Ok(productDto);
         }
 
-        /// <summary>
-        /// Creates a new product (admin only)
-        /// </summary>
-        /// <param name="command">Product creation details</param>
-        /// <returns>ID of the newly created product</returns>
-        /// <response code="201">Product created successfully</response>
-        /// <response code="400">Invalid product data</response>
-        /// <response code="401">Unauthorized</response>
-        /// <response code="403">Forbidden - requires admin role</response>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Guid>> CreateProduct([FromBody] CreateProductCommand command)
@@ -105,19 +96,18 @@ namespace ElectricityShop.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductCommand command)
         {
-            if (id != command.Id)
-            {
-                return BadRequest("The ID in the URL does not match the ID in the request body");
-            }
+            command.Id = id; // Set the Id from the route parameter
 
             var success = await _mediator.Send(command);
 
-            if (!success)
+            if (success)
             {
-                return NotFound();
+                return Ok(); // Or NoContent()
             }
-
-            return NoContent();
+            else
+            {
+                return NotFound($"Product with ID {id} not found or update failed.");
+            }
         }
 
         /// <summary>
@@ -133,15 +123,17 @@ namespace ElectricityShop.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteProduct(Guid id)
         {
-            var command = new DeleteProductCommand { Id = id };
+            var command = new DeleteProductCommand { ProductId = id };
             var success = await _mediator.Send(command);
 
-            if (!success)
+            if (success)
             {
-                return NotFound();
+                return NoContent(); // Successful deletion, no content to return
             }
-
-            return NoContent();
+            else
+            {
+                return NotFound($"Product with ID {id} not found.");
+            }
         }
     }
 }

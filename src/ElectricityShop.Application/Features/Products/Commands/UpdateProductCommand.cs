@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic; // Added
+using ElectricityShop.Application.Features.Products.Commands.Dtos; // Added
 using MediatR;
 using System;
 
@@ -6,26 +9,14 @@ namespace ElectricityShop.Application.Features.Products.Commands
     /// <summary>
     /// Command to update an existing product
     /// </summary>
-    public class UpdateProductCommand : IRequest<bool>
+    public class UpdateProductCommand : IRequest<bool> 
     {
         /// <summary>
         /// ID of the product to update
         /// </summary>
-        public Guid Id { get; set; }
-        
-        /// <summary>
-        /// Updated name of the product
-        /// </summary>
-        public string Name { get; set; }
-        
-        /// <summary>
-        /// Updated description of the product
-        /// </summary>
-        public string Description { get; set; }
-        
-        /// <summary>
-        /// Updated price of the product
-        /// </summary>
+        public Guid Id { get; set; } 
+        public required string Name { get; set; } // Added required
+        public string? Description { get; set; } // Made nullable
         public decimal Price { get; set; }
         
         /// <summary>
@@ -42,5 +33,8 @@ namespace ElectricityShop.Application.Features.Products.Commands
         /// Whether the product is active
         /// </summary>
         public bool IsActive { get; set; }
+
+        public List<ProductImageUpdateDto> Images { get; set; } = new List<ProductImageUpdateDto>(); // Added
+        public List<ProductAttributeUpdateDto> Attributes { get; set; } = new List<ProductAttributeUpdateDto>(); // Added
     }
 }

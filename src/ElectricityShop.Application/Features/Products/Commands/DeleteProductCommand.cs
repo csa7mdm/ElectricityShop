@@ -1,16 +1,11 @@
+using System;
 using MediatR;
 using System;
 
 namespace ElectricityShop.Application.Features.Products.Commands
 {
-    /// <summary>
-    /// Command to delete an existing product
-    /// </summary>
-    public class DeleteProductCommand : IRequest<bool>
+    public class DeleteProductCommand : IRequest<bool> // bool: true if deleted, false if not found
     {
-        /// <summary>
-        /// ID of the product to delete
-        /// </summary>
-        public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
     }
 }

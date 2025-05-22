@@ -3,9 +3,10 @@ using System;
 
 namespace ElectricityShop.Application.Features.Products.Commands
 {
-    /// <summary>
-    /// Command to create a new product
-    /// </summary>
+using System.Collections.Generic;
+
+namespace ElectricityShop.Application.Features.Products.Commands
+{
     public class CreateProductCommand : IRequest<Guid>
     {
         /// <summary>

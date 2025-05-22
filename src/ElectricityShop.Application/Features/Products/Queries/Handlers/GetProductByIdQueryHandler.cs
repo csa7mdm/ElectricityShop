@@ -2,8 +2,16 @@ using ElectricityShop.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ElectricityShop.Application.Common.Interfaces; // For IApplicationDbContext or if IRepository is there
+using ElectricityShop.Application.Features.Products.Queries; // For ProductDto, ProductImageDto, ProductAttributeDto
+using ElectricityShop.Domain.Entities;
+using ElectricityShop.Domain.Interfaces;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.Application.Features.Products.Queries.Handlers
 {
@@ -12,62 +20,89 @@ namespace ElectricityShop.Application.Features.Products.Queries.Handlers
     /// </summary>
     public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, ProductDto>
     {
-        private readonly IApplicationDbContext _dbContext;
-        private readonly ICacheService _cacheService;
-        
+        private readonly ILogger<GetProductByIdQueryHandler> _logger;
+        private readonly IRepository<Product> _productRepository;
+        private readonly IRepository<Category> _categoryRepository;
+
         /// <summary>
         /// Initializes a new instance of GetProductByIdQueryHandler
         /// </summary>
         /// <param name="dbContext">Application DB context</param>
         /// <param name="cacheService">Cache service for optimized retrieval</param>
         public GetProductByIdQueryHandler(
-            IApplicationDbContext dbContext,
-            ICacheService cacheService)
+            ILogger<GetProductByIdQueryHandler> logger,
+            IRepository<Product> productRepository,
+            IRepository<Category> categoryRepository)
         {
-            _dbContext = dbContext;
-            _cacheService = cacheService;
+            _logger = logger;
+            _productRepository = productRepository;
+            _categoryRepository = categoryRepository;
         }
-        
+
         /// <summary>
         /// Handles the query, retrieving from cache if available
         /// </summary>
         public async Task<ProductDto> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
         {
-            // Create cache key for this product
-            string cacheKey = $"product:{request.Id}";
+            _logger?.LogInformation("Attempting to fetch product by ID: {ProductId} from database", request.ProductId);
+
+            // The IRepository.GetByIdAsync is expected to handle includes or eager loading if necessary.
+            // For this example, we assume product.Images and product.Attributes are populated.
+            // Category might need a separate fetch if not included.
+            var product = await _productRepository.GetByIdAsync(request.ProductId);
             
-            // Try to get the product from cache first
-            var cachedProduct = await _cacheService.GetAsync<ProductDto>(cacheKey);
-            if (cachedProduct != null)
+            if (product == null)
             {
-                return cachedProduct;
+                _logger?.LogWarning("Product not found in database. ProductId: {ProductId}", request.ProductId);
+                return null;
+            }
+
+            string categoryName = "N/A"; // Default category name
+            if (product.CategoryId != Guid.Empty)
+            {
+                // Attempt to get category name.
+                // If product.Category is null (not eagerly loaded with the product), fetch it.
+                var category = product.Category ?? await _categoryRepository.GetByIdAsync(product.CategoryId);
+                if (category != null)
+                {
+                    categoryName = category.Name;
+                }
+                else
+                {
+                     _logger?.LogWarning("Category not found for CategoryId: {CategoryId} associated with ProductId: {ProductId}", product.CategoryId, product.Id);
+                }
+            }
+            else
+            {
+                 _logger?.LogInformation("Product {ProductId} has no CategoryId.", product.Id);
             }
             
-            // If not in cache, get from database
-            var product = await (from p in _dbContext.Products
-                          join c in _dbContext.Categories on p.CategoryId equals c.Id
-                          where p.Id == request.Id
-                          select new ProductDto
-                          {
-                              Id = p.Id,
-                              Name = p.Name,
-                              Description = p.Description,
-                              Price = p.Price,
-                              StockQuantity = p.StockQuantity,
-                              CategoryId = p.CategoryId,
-                              CategoryName = c.Name,
-                              IsActive = p.IsActive
-                              // Other properties mapped here...
-                          }).FirstOrDefaultAsync(cancellationToken);
-            
-            // If product was found, cache it
-            if (product != null)
+            var productDto = new ProductDto
             {
-                // Cache the product for 30 minutes
-                await _cacheService.SetAsync(cacheKey, product, TimeSpan.FromMinutes(30));
-            }
-            
-            return product;
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity,
+                CategoryId = product.CategoryId,
+                CategoryName = categoryName,
+                IsActive = product.IsActive,
+                Images = product.Images?.Select(img => new ProductImageDto
+                {
+                    Id = img.Id,
+                    ImageUrl = img.ImageUrl,
+                    IsMain = img.IsMain
+                }).ToList() ?? new List<ProductImageDto>(),
+                Attributes = product.Attributes?.Select(attr => new ProductAttributeDto
+                {
+                    Id = attr.Id,
+                    Name = attr.Name,
+                    Value = attr.Value
+                }).ToList() ?? new List<ProductAttributeDto>()
+            };
+
+            _logger?.LogInformation("Product found and mapped to DTO. ProductId: {ProductId}", request.ProductId);
+            return productDto;
         }
     }
 }

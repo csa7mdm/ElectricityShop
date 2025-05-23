@@ -1,4 +1,52 @@
-# Getting Started with Create React App
+# ElectricityShop - React Frontend
+
+This project is the React-based frontend for the ElectricityShop e-commerce application. It was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+## Project Overview
+
+This frontend application aims to provide a user-friendly interface for customers to browse products, manage their shopping cart, place orders, and manage their accounts on the ElectricityShop platform. It interacts with the backend API services provided by the ElectricityShop main application.
+
+## Backend API Integration Status
+
+The backend API has been significantly developed, and the following features are now supported by available endpoints. Frontend development can proceed with integrating these functionalities.
+
+### Product Features
+- **Fetch Product List:** APIs are ready to deliver a list of products. Basic search by product name/description and filtering by CategoryId is supported.
+- **Fetch Product Details:** API for retrieving detailed information for a specific product is available.
+- **Product Management (Admin):** APIs for creating, updating, and deleting products are available (admin-only).
+
+### Shopping Cart Features
+- **View Cart:** API to get the current user's shopping cart is functional.
+- **Add to Cart:** API to add items to the user's cart is functional.
+- **Update Cart Item:** API to update the quantity of an item in the cart (including setting quantity to 0 to remove) is functional.
+- **Remove Cart Item:** API to remove an item directly from the cart is functional.
+- **Clear Cart:** API to clear all items from the user's cart is functional.
+
+### Order Features
+- **Create Order:** API to create a new order from the items in the cart is ready.
+- **View Orders:** APIs to fetch a user's order history and details of a specific order are available.
+- **Cancel Order:** API to cancel an order (if it's in a cancelable state) is functional.
+- **Process Payment:** API for processing payments for an order is available (currently simulated on the backend).
+
+### Authentication
+- User registration, login, and JWT token refresh functionalities are available via backend APIs.
+
+**For detailed API endpoint documentation, please refer to the main project `README.md` in the root directory.**
+
+## Development Focus / Next Steps
+
+With the backend APIs in place for core e-commerce functionalities, frontend development can focus on:
+- Building UI components for product listing, product details, and product filtering/search.
+- Implementing the shopping cart view and user interactions (add, update, remove items).
+- Developing the multi-step checkout process UI, including order summary and payment form.
+- Creating UI for users to view their order history and individual order details.
+- Implementing user registration and login forms.
+- State management for cart, user session, and product data.
+- Integrating with the backend services for all the features listed above.
+
+---
+
+# Getting Started with Create React App (Original Readme)
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

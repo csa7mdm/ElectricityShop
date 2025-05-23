@@ -7,6 +7,10 @@ using System.Collections.Generic;
 
 namespace ElectricityShop.Application.Features.Products.Commands
 {
+using System.Collections.Generic;
+
+namespace ElectricityShop.Application.Features.Products.Commands
+{
     public class CreateProductCommand : IRequest<Guid>
     {
         /// <summary>

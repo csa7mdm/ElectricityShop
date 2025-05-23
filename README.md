@@ -69,11 +69,11 @@ ElectricityShop/
 
 ## ✨ Features
 
-- **Product Management**: Browsing products, categories, and details
-- **User Authentication**: Register, login, JWT-based auth
-- **Shopping Cart**: Add, update, remove items
-- **Order Processing**: Checkout, payment, order history
-- **Admin Panel**: Product and order management
+- **Product Management**: Backend for CRUD operations, product details, and basic search (name/description) & filtering (CategoryId) implemented. Frontend integration pending.
+- **User Authentication**: Register, login, JWT-based auth.
+- **Shopping Cart**: Backend for add, update, remove items, and clear cart functionalities implemented. Cart data is persisted. Frontend integration pending.
+- **Order Processing**: Backend for creating orders, retrieving user's orders (list and by ID), order cancellation, and payment processing (simulated) implemented. Frontend integration pending.
+- **Admin Panel**: Basic admin authorization for product creation/update/deletion. Full admin panel UI/UX pending.
 
 ## 🚀 Getting Started
 
@@ -136,7 +136,7 @@ Update connection strings and other settings in `appsettings.json`:
 - `POST /api/auth/refresh` - Refresh token
 
 ### Products
-- `GET /api/products` - Get all products (with filtering)
+- `GET /api/products` - Get all products (with basic filtering by SearchTerm and CategoryId)
 - `GET /api/products/{id}` - Get product by ID
 - `POST /api/products` - Create new product (Admin)
 - `PUT /api/products/{id}` - Update product (Admin)
@@ -145,15 +145,16 @@ Update connection strings and other settings in `appsettings.json`:
 ### Cart
 - `GET /api/cart` - Get current user's cart
 - `POST /api/cart/items` - Add item to cart
-- `PUT /api/cart/items/{id}` - Update cart item
+- `PUT /api/cart/items/{id}` - Update cart item quantity (set to 0 to remove)
 - `DELETE /api/cart/items/{id}` - Remove item from cart
+- `DELETE /api/cart` - Clear all items from current user's cart
 
 ### Orders
 - `GET /api/orders` - Get user's orders
 - `GET /api/orders/{id}` - Get specific order
 - `POST /api/orders` - Create new order
 - `PUT /api/orders/{id}/cancel` - Cancel order
-- `POST /api/orders/{id}/pay` - Process payment
+- `POST /api/orders/{id}/pay` - Process payment (currently simulated)
 
 ## 🔧 Common Issues and Solutions
 
@@ -230,17 +231,17 @@ mock.Setup(x => x.SomeMethodAsync(It.IsAny<CancellationToken>())).Returns(result
 ## 🛣️ Development Roadmap
 
 1. **Complete Product Management**:
-   - Implement remaining product CRUD operations
-   - Add product search and filtering functionality
+   - Backend implemented, frontend pending.
+   - Basic backend search (name/description) & filter (CategoryId) implemented. Advanced filtering/search capabilities and frontend integration pending.
 
 2. **Shopping Cart Implementation**:
-   - Complete cart add/remove functionality
-   - Implement cart persistence
+   - Backend implemented for add, update, remove, and clear cart. Frontend pending.
+   - Backend implemented (cart data is now stored, associated with users).
 
 3. **Order Processing**:
-   - Complete checkout process
-   - Implement payment integration
-   - Add order status tracking
+   - Backend for order creation and payment processing (simulated) is implemented. Full checkout flow including UI and comprehensive validation pending.
+   - Backend structure for payment processing exists (simulated). Real payment gateway integration pending.
+   - Backend supports order statuses (e.g., Processing, Paid, Cancelled through commands); specific UI/notifications for tracking pending.
 
 4. **User Account Management**:
    - Implement profile management

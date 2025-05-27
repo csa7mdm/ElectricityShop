@@ -1,13 +1,4 @@
 using MediatR;
-using System;
-
-namespace ElectricityShop.Application.Features.Products.Commands
-{
-using System.Collections.Generic;
-
-namespace ElectricityShop.Application.Features.Products.Commands
-{
-using System.Collections.Generic;
 
 namespace ElectricityShop.Application.Features.Products.Commands
 {
@@ -17,22 +8,22 @@ namespace ElectricityShop.Application.Features.Products.Commands
         /// Name of the product
         /// </summary>
         public string Name { get; set; }
-        
+
         /// <summary>
         /// Description of the product
         /// </summary>
         public string Description { get; set; }
-        
+
         /// <summary>
         /// Price of the product
         /// </summary>
         public decimal Price { get; set; }
-        
+
         /// <summary>
         /// Initial stock quantity
         /// </summary>
         public int StockQuantity { get; set; }
-        
+
         /// <summary>
         /// Category ID
         /// </summary>

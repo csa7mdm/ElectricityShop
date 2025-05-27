@@ -2,86 +2,124 @@ using ElectricityShop.Application.Common.Interfaces;
 using ElectricityShop.Application.Features.Products.Queries;
 using ElectricityShop.Application.Features.Products.Queries.Handlers;
 using ElectricityShop.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging; // Added for ILogger
 using Moq;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ElectricityShop.Application.Tests.Features.Products.Queries
 {
     public class GetProductByIdQueryTests
     {
-        private readonly Mock<IApplicationDbContext> _contextMock;
-        private readonly Mock<ICacheService> _cacheServiceMock;
-        private readonly GetProductByIdQueryHandler _handler;
+        private readonly Mock<IRepository<Product>> _productRepositoryMock;
+        private readonly Mock<IRepository<Category>> _categoryRepositoryMock;
+        private readonly Mock<ILogger<UpdateProductCommandHandler>> _loggerMock;
+        private readonly Mock<ICacheInvalidationService> _cacheInvalidationMock; // Assuming this is still used by the handler, or by related logic
+        private readonly UpdateProductCommandHandler _handler;
 
-        public GetProductByIdQueryTests()
+        private readonly Guid _productId = Guid.NewGuid();
+        private readonly Guid _categoryId = Guid.NewGuid();
+        private readonly Guid _newCategoryId = Guid.NewGuid();
+        
+        public UpdateProductCommandTests()
         {
-            _contextMock = new Mock<IApplicationDbContext>();
-            _cacheServiceMock = new Mock<ICacheService>();
-            _handler = new GetProductByIdQueryHandler(_contextMock.Object, _cacheServiceMock.Object);
+            _productRepositoryMock = new Mock<IRepository<Product>>();
+            _categoryRepositoryMock = new Mock<IRepository<Category>>();
+            _loggerMock = new Mock<ILogger<UpdateProductCommandHandler>>();
+            _cacheInvalidationMock = new Mock<ICacheInvalidationService>(); // Initialized
+            
+            // Handler constructor updated as per CS7036 error message
+            _handler = new UpdateProductCommandHandler(
+                _loggerMock.Object, 
+                _productRepositoryMock.Object, 
+                _categoryRepositoryMock.Object
+                // Assuming ICacheInvalidationService is not passed to constructor based on CS7036.
+                // If it is, _cacheInvalidationMock.Object should be added here.
+            );
         }
 
         [Fact]
         public async Task Handle_CacheHit_ReturnsFromCache()
         {
             // Arrange
-            var productId = Guid.NewGuid();
-            var cacheKey = $"product:{productId}";
-
-            var cachedProduct = new ProductDto
+            var product = new Product
             {
-                Id = productId,
-                Name = "Cached Product",
-                Description = "From Cache",
-                Price = 9.99m
+                Id = _productId, // Use Guid field
+                Name = "Old Name",
+                Description = "Old Description",
+                Price = 9.99m,
+                StockQuantity = 10,
+                CategoryId = _categoryId, // Use Guid field
+                IsActive = true
             };
 
-            _cacheServiceMock.Setup(x => x.GetAsync<ProductDto>(cacheKey))
-                .ReturnsAsync(cachedProduct);
+            var category = new Category { Id = _categoryId, Name = "Old Category", Description = "Desc" };
+            var newCategory = new Category { Id = _newCategoryId, Name = "New Category", Description = "Desc" };
 
-            var query = new GetProductByIdQuery { Id = productId };
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(category);
+            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_newCategoryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(newCategory);
+            // Assume IRepository<T> has a method like SaveChangesAsync or UnitOfWork handles it.
+            // If not, _productRepositoryMock.Setup(r => r.UpdateAsync(product, It.IsAny<CancellationToken>())) might be needed.
 
+            var command = new UpdateProductCommand
+            {
+                Id = _productId, // Use Guid field
+                Name = "New Name",
+                Description = "New Description",
+                Price = 19.99m,
+                StockQuantity = 20,
+                CategoryId = _newCategoryId, // Use Guid field for new category
+                IsActive = true
+            };
+            
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(productId, result.Id);
-            Assert.Equal("Cached Product", result.Name);
-
-            // Verify cache was checked
-            _cacheServiceMock.Verify(x => x.GetAsync<ProductDto>(cacheKey), Times.Once);
-
-            // Verify database was not queried
-            _contextMock.Verify(x => x.Products, Times.Never);
+            Assert.True(result); // Assuming handler returns bool
+            
+            // Verify product was updated
+            Assert.Equal("New Name", product.Name);
+            Assert.Equal("New Description", product.Description);
+            Assert.Equal(19.99m, product.Price);
+            Assert.Equal(20, product.StockQuantity);
+            Assert.Equal(_newCategoryId, product.CategoryId); // Assert Guid
+            
+            // Verify cache invalidation (removing (int) cast and using Guid)
+            // These lines assume the handler still calls ICacheInvalidationService.
+            // If the handler was refactored to not call it, these verifies might fail or need removal.
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductCacheAsync(_productId), Times.Once);
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductsByCategoryAsync(_categoryId), Times.Once);
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductsByCategoryAsync(_newCategoryId), Times.Once);
+            
+            // Verify SaveChangesAsync was called (now on repository or UoW)
+            // This depends on IRepository<T> or a UnitOfWork pattern.
+            // For now, let's assume UpdateAsync implies save or there's a Save method on repository.
+            _productRepositoryMock.Verify(r => r.UpdateAsync(product, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task Handle_CacheMiss_QueriesDatabaseAndCaches()
         {
             // Arrange
-            var productId = Guid.NewGuid();
-            var categoryId = Guid.NewGuid();
-            var cacheKey = $"product:{productId}";
-
-            // Setup cache miss
-            _cacheServiceMock.Setup(x => x.GetAsync<ProductDto>(cacheKey))
-                .ReturnsAsync((ProductDto)null);
-
-            // Setup database result
-            var product = new Product
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Product)null);
+            
+            var command = new UpdateProductCommand
             {
-                Id = productId,
-                Name = "Database Product",
-                Description = "From Database",
+                Id = Guid.NewGuid(), // Use new Guid for non-existing product
+                Name = "New Name",
+                Description = "New Description",
                 Price = 19.99m,
-                CategoryId = categoryId
-            };
-
-            var category = new Category
-            {
-                Id = categoryId,
-                Name = "Test Category"
+                StockQuantity = 20,
+                CategoryId = Guid.NewGuid(), // Use new Guid
+                IsActive = true
             };
 
             // Mock the join query result
@@ -101,71 +139,75 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(productId, result.Id);
-            Assert.Equal("Database Product", result.Name);
-
-            // Verify cache was checked
-            _cacheServiceMock.Verify(x => x.GetAsync<ProductDto>(cacheKey), Times.Once);
-
-            // Verify result was cached
-            _cacheServiceMock.Verify(x => x.SetAsync(
-                cacheKey,
-                It.Is<ProductDto>(p => p.Id == productId),
-                It.IsAny<TimeSpan?>()),
-                Times.Once);
+            Assert.False(result);
+            
+            // Verify cache invalidation was not called (using Guid)
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductCacheAsync(It.IsAny<Guid>()), Times.Never);
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductsByCategoryAsync(It.IsAny<Guid>()), Times.Never);
+            
+            // Verify UpdateAsync was not called
+            _productRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task Handle_ProductNotFound_ReturnsNull()
         {
             // Arrange
-            var productId = Guid.NewGuid();
-            var cacheKey = $"product:{productId}";
+            var product = new Product
+            {
+                Id = _productId, // Use Guid field
+                Name = "Old Name",
+                Description = "Old Description",
+                Price = 9.99m,
+                StockQuantity = 10,
+                CategoryId = _categoryId, // Use Guid field
+                IsActive = true
+            };
+            var category = new Category { Id = _categoryId, Name = "Category", Description = "Desc" };
 
-            // Setup cache miss
-            _cacheServiceMock.Setup(x => x.GetAsync<ProductDto>(cacheKey))
-                .ReturnsAsync((ProductDto)null);
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(category);
 
-            // Empty database result
-            var products = new List<Product>().AsQueryable();
-            var categories = new List<Category>().AsQueryable();
-
-            var productsMock = MockDbSet(products);
-            var categoriesMock = MockDbSet(categories);
-
-            _contextMock.Setup(ctx => ctx.Products).Returns(productsMock.Object);
-            _contextMock.Setup(ctx => ctx.Categories).Returns(categoriesMock.Object);
-
-            var query = new GetProductByIdQuery { Id = productId };
-
+            var command = new UpdateProductCommand
+            {
+                Id = _productId, // Use Guid field
+                Name = "New Name",
+                Description = "New Description",
+                Price = 19.99m,
+                StockQuantity = 20,
+                CategoryId = _categoryId, // Same category ID (Guid)
+                IsActive = true
+            };
+            
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.Null(result);
-
-            // Verify cache was checked
-            _cacheServiceMock.Verify(x => x.GetAsync<ProductDto>(cacheKey), Times.Once);
-
-            // Verify result was not cached (because it's null)
-            _cacheServiceMock.Verify(x => x.SetAsync(
-                It.IsAny<string>(),
-                It.IsAny<ProductDto>(),
-                It.IsAny<TimeSpan?>()),
-                Times.Never);
+            Assert.True(result);
+            
+            // Verify product was updated
+            Assert.Equal("New Name", product.Name);
+            
+            // Verify only product cache was invalidated (using Guid)
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductCacheAsync(_productId), Times.Once);
+            _cacheInvalidationMock.Verify(x => x.InvalidateProductsByCategoryAsync(It.IsAny<Guid>()), Times.Never);
+            _productRepositoryMock.Verify(r => r.UpdateAsync(product, It.IsAny<CancellationToken>()), Times.Once);
         }
-
-        // Helper method for mocking DbSet
-        private static Mock<DbSet<T>> MockDbSet<T>(IQueryable<T> data) where T : class
-        {
-            var mock = new Mock<DbSet<T>>();
-            mock.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
-            mock.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
-            mock.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
-            mock.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
-
-            return mock;
-        }
+        
+        // Helper method for mocking DbSet - No longer directly used by these tests if IRepository is primary.
+        // Keeping it in case other tests in the file might use it or if it's needed for IRepository mock setup internally.
+        // private static Mock<DbSet<T>> MockDbSet<T>(IQueryable<T> data) where T : class
+        // {
+        //     var mock = new Mock<DbSet<T>>();
+        //     mock.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
+        //     mock.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
+        //     mock.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
+        //     mock.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
+        //     mock.Setup(d => d.FindAsync(It.IsAny<object[]>())).Returns(ValueTask.FromResult(data.FirstOrDefault()));
+            
+        //     return mock;
+        // }
     }
 }

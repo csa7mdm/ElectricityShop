@@ -11,7 +11,8 @@ namespace ElectricityShop.Domain.Entities
         /// Gets or sets the user ID who placed the order
         /// </summary>
         public Guid UserId { get; set; } // Renamed from CustomerId for consistency
-
+        public virtual User User { get; set; } // CS1061 fix: Added User navigation property
+        
         /// <summary>
         /// Gets or sets the unique order number
         /// </summary>

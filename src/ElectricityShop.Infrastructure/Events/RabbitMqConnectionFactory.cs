@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events; // Added for ShutdownEventArgs
 
 namespace ElectricityShop.Infrastructure.Events
 {
@@ -62,7 +63,7 @@ namespace ElectricityShop.Infrastructure.Events
             }
 
             _connection = factory.CreateConnection();
-
+            
             // Ensure the handler matches AsyncEventHandler<ShutdownEventArgs> and uses a valid property
             _connection.ConnectionShutdown += async (sender, args) =>
             {

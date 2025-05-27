@@ -39,5 +39,10 @@ namespace ElectricityShop.Domain.Entities
         /// Gets or sets the order
         /// </summary>
         public virtual Order Order { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the product associated with this order item
+        /// </summary>
+        public virtual Product Product { get; set; } // CS1061 fix: Added Product navigation property
     }
 }

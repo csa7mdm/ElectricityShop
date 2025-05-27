@@ -78,20 +78,23 @@ namespace ElectricityShop.Application.Features.Orders.Commands.Handlers
             // Dummy data simulation:
             if (request.OrderId == SimulatedPayableOrderId && request.UserId == SimulatedUserIdForPayableOrder)
             {
-                if (_simulatedOrderStatusForPayment == OrderStatus.Processing || _simulatedOrderStatusForPayment == OrderStatus.PendingPayment)
+                // Assuming Domain.Enums.OrderStatus has PaymentPending and Processing
+                if (_simulatedOrderStatusForPayment == OrderStatus.Processing || _simulatedOrderStatusForPayment == OrderStatus.PaymentPending)
                 {
                     // Simulate successful payment if card number is not "invalid"
                     bool simulatedPaymentSuccess = request.CardNumber != "0000000000000000"; // Simple failure condition
 
                     if (simulatedPaymentSuccess)
                     {
-                        _simulatedOrderStatusForPayment = OrderStatus.Paid;
+                        // Assuming Domain.Enums.OrderStatus has PaymentProcessed
+                        _simulatedOrderStatusForPayment = OrderStatus.PaymentProcessed;
                         _logger?.LogInformation("Simulated payment successful for OrderId: {OrderId}. Status: {OrderStatus}", request.OrderId, _simulatedOrderStatusForPayment);
                         return true;
                     }
                     else
                     {
-                        _simulatedOrderStatusForPayment = OrderStatus.PaymentFailed;
+                        // Assuming Domain.Enums.OrderStatus has Failed
+                        _simulatedOrderStatusForPayment = OrderStatus.Failed;
                         _logger?.LogWarning("Simulated payment FAILED for OrderId: {OrderId}. Status: {OrderStatus}", request.OrderId, _simulatedOrderStatusForPayment);
                         return false;
                     }

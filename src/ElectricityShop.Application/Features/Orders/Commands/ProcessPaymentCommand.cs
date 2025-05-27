@@ -17,7 +17,7 @@ namespace ElectricityShop.Application.Features.Orders.Commands
         public string ExpiryYear { get; set; }
         public string CVV { get; set; }
         
-        // Billing Address (assuming BillingAddressDto is defined, e.g., in Queries)
-        public BillingAddressDto BillingAddress { get; set; }
+        // Billing Address is now expected to be AddressDto from Queries namespace
+        public AddressDto BillingAddress { get; set; }
     }
 }

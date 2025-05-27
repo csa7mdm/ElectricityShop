@@ -57,5 +57,15 @@ namespace ElectricityShop.Infrastructure.Persistence.Repositories
         {
             return await _dbContext.Set<T>().CountAsync(predicate);
         }
+
+        public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbContext.Set<T>().FirstOrDefaultAsync(predicate);
+        }
+
+        public async Task<IReadOnlyList<T>> GetAllAsync()
+        {
+            return await ListAllAsync();
+        }
     }
 }

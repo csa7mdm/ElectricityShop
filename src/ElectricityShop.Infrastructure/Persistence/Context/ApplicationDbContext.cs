@@ -20,6 +20,7 @@ namespace ElectricityShop.Infrastructure.Persistence.Context
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<FailedMessage> FailedMessages { get; set; } // CS0535 fix
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

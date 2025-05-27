@@ -1,0 +1,520 @@
+{
+  "entities": [
+    {
+      "name": "ApplicationDbContext",
+      "entityType": "Class",
+      "observations": [
+        "Concrete implementation of DbContext in the Infrastructure layer",
+        "Implements IApplicationDbContext interface",
+        "Contains DbSet properties for all entities",
+        "Located in ElectricityShop.Infrastructure.Persistence.Context namespace"
+      ]
+    },
+    {
+      "name": "IApplicationDbContext",
+      "entityType": "Interface",
+      "observations": [
+        "Defined in the Application layer",
+        "Contains DbSet properties for all entities",
+        "Provides Set<TEntity>() and Entry<TEntity>() methods",
+        "Used to abstract database access for clean architecture",
+        "Located in ElectricityShop.Application.Common.Interfaces namespace"
+      ]
+    },
+    {
+      "name": "Repository<T>",
+      "entityType": "Class",
+      "observations": [
+        "Generic repository implementation in Infrastructure layer",
+        "Depends on IApplicationDbContext",
+        "Implements IRepository<T> interface",
+        "Handles basic CRUD operations for any entity",
+        "Located in ElectricityShop.Infrastructure.Persistence.Repositories namespace"
+      ]
+    },
+    {
+      "name": "IRepository<T>",
+      "entityType": "Interface",
+      "observations": [
+        "Defined in the Domain layer",
+        "Generic repository pattern interface",
+        "Provides methods for querying and manipulating entities",
+        "Located in ElectricityShop.Domain.Interfaces namespace"
+      ]
+    },
+    {
+      "name": "UnitOfWork",
+      "entityType": "Class",
+      "observations": [
+        "Implements IUnitOfWork interface from Domain layer",
+        "Manages repositories and transactions",
+        "Depends on IApplicationDbContext",
+        "Located in ElectricityShop.Infrastructure.Persistence namespace"
+      ]
+    },
+    {
+      "name": "IUnitOfWork",
+      "entityType": "Interface",
+      "observations": [
+        "Defined in the Domain layer",
+        "Provides access to all repositories",
+        "Handles transaction management",
+        "Located in ElectricityShop.Domain.Interfaces namespace"
+      ]
+    },
+    {
+      "name": "BaseEntity",
+      "entityType": "Class",
+      "observations": [
+        "Base class for all domain entities",
+        "Contains common properties like Id, CreatedAt, UpdatedAt",
+        "Located in ElectricityShop.Domain.Entities namespace"
+      ]
+    },
+    {
+      "name": "Product",
+      "entityType": "Class",
+      "observations": [
+        "Domain entity representing a product",
+        "Inherits from BaseEntity",
+        "Located in ElectricityShop.Domain.Entities namespace"
+      ]
+    },
+    {
+      "name": "TelemetryExtensions",
+      "entityType": "Class",
+      "observations": [
+        "Static class with extension methods for OpenTelemetry configuration",
+        "Provides AddOpenTelemetry method for service registration",
+        "Located in ElectricityShop.API.Infrastructure.Telemetry namespace"
+      ]
+    },
+    {
+      "name": "TelemetryLoginRequest",
+      "entityType": "Class",
+      "observations": [
+        "DTO for login requests in telemetry examples",
+        "Contains Username and Password properties",
+        "Located in ElectricityShop.API.Models namespace"
+      ]
+    },
+    {
+      "name": "OrderRequest",
+      "entityType": "Class",
+      "observations": [
+        "DTO for order creation requests",
+        "Contains Items collection and TotalAmount properties",
+        "Located in ElectricityShop.API.Models namespace"
+      ]
+    },
+    {
+      "name": "TelemetryExampleController",
+      "entityType": "Class",
+      "observations": [
+        "API controller demonstrating telemetry integration",
+        "Uses TelemetryLoginRequest and OrderRequest models",
+        "Located in ElectricityShop.API.Controllers namespace"
+      ]
+    },
+    {
+      "name": "TelemetryExampleControllerV2",
+      "entityType": "Class",
+      "observations": [
+        "Updated version of TelemetryExampleController",
+        "Uses shared models from Models namespace",
+        "Located in ElectricityShop.API.Controllers namespace"
+      ]
+    },
+    {
+      "name": "ApiWebApplicationFactory",
+      "entityType": "Class",
+      "observations": [
+        "Test helper class for integration tests",
+        "Creates test-specific service configuration",
+        "Mocks infrastructure dependencies for testing",
+        "Properly handles CancellationToken parameters in async methods",
+        "Located in ElectricityShop.API.Tests.Integration namespace"
+      ]
+    },
+    {
+      "name": "Program",
+      "entityType": "Class",
+      "observations": [
+        "Entry point for the API application",
+        "Configures services and middleware",
+        "Located in ElectricityShop.API namespace"
+      ]
+    },
+    {
+      "name": "ElectricityShop.Domain",
+      "entityType": "Project",
+      "observations": [
+        "Contains domain entities, interfaces and domain logic",
+        "Has no dependencies on other projects",
+        "Core of the Clean Architecture"
+      ]
+    },
+    {
+      "name": "ElectricityShop.Application",
+      "entityType": "Project",
+      "observations": [
+        "Contains business logic, interfaces, commands and queries",
+        "Depends only on Domain project",
+        "Middle layer in Clean Architecture"
+      ]
+    },
+    {
+      "name": "ElectricityShop.Infrastructure",
+      "entityType": "Project",
+      "observations": [
+        "Contains implementations of interfaces defined in Application",
+        "Includes database, external services, etc.",
+        "Depends on Domain and Application projects"
+      ]
+    },
+    {
+      "name": "ElectricityShop.API",
+      "entityType": "Project",
+      "observations": [
+        "Contains controllers, middleware, and API-specific code",
+        "Entry point for the application",
+        "Depends on all other projects"
+      ]
+    },
+    {
+      "name": "ElectricityShop.API.Tests",
+      "entityType": "Project",
+      "observations": [
+        "Contains tests for the API project",
+        "Uses ApiWebApplicationFactory for integration tests",
+        "References all projects"
+      ]
+    },
+    {
+      "name": "ValidationBehavior<TRequest, TResponse>",
+      "entityType": "Class",
+      "observations": [
+        "MediatR pipeline behavior for validation",
+        "Uses FluentValidation",
+        "Located in ElectricityShop.Application.Common.Behaviors namespace"
+      ]
+    },
+    {
+      "name": "ApiMetrics",
+      "entityType": "Class",
+      "observations": [
+        "Static class containing OpenTelemetry metrics",
+        "Defines counters, histograms, and gauges",
+        "Located in ElectricityShop.API.Infrastructure.Telemetry namespace"
+      ]
+    },
+    {
+      "name": "RequestTelemetryMiddleware",
+      "entityType": "Class",
+      "observations": [
+        "Middleware for tracking request telemetry",
+        "Uses ApiMetrics",
+        "Located in ElectricityShop.API.Infrastructure.Telemetry namespace"
+      ]
+    },
+    {
+      "name": "AuthenticationResult",
+      "entityType": "Class",
+      "observations": [
+        "Model for representing authentication results",
+        "Contains properties for token, refresh token, and success state",
+        "Located in ElectricityShop.Application.Common.Models namespace"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from": "ApplicationDbContext",
+      "to": "IApplicationDbContext",
+      "relationType": "implements"
+    },
+    {
+      "from": "Repository<T>",
+      "to": "IRepository<T>",
+      "relationType": "implements"
+    },
+    {
+      "from": "Repository<T>",
+      "to": "IApplicationDbContext",
+      "relationType": "uses"
+    },
+    {
+      "from": "UnitOfWork",
+      "to": "IUnitOfWork",
+      "relationType": "implements"
+    },
+    {
+      "from": "UnitOfWork",
+      "to": "IApplicationDbContext",
+      "relationType": "uses"
+    },
+    {
+      "from": "UnitOfWork",
+      "to": "Repository<T>",
+      "relationType": "creates and manages"
+    },
+    {
+      "from": "Product",
+      "to": "BaseEntity",
+      "relationType": "inherits from"
+    },
+    {
+      "from": "TelemetryExampleController",
+      "to": "TelemetryLoginRequest",
+      "relationType": "uses"
+    },
+    {
+      "from": "TelemetryExampleController",
+      "to": "OrderRequest",
+      "relationType": "uses"
+    },
+    {
+      "from": "TelemetryExampleControllerV2",
+      "to": "TelemetryLoginRequest",
+      "relationType": "uses"
+    },
+    {
+      "from": "TelemetryExampleControllerV2",
+      "to": "OrderRequest",
+      "relationType": "uses"
+    },
+    {
+      "from": "Program",
+      "to": "TelemetryExtensions",
+      "relationType": "uses"
+    },
+    {
+      "from": "Program",
+      "to": "ApplicationDbContext",
+      "relationType": "configures"
+    },
+    {
+      "from": "ApiWebApplicationFactory",
+      "to": "Program",
+      "relationType": "references"
+    },
+    {
+      "from": "ApiWebApplicationFactory",
+      "to": "ApplicationDbContext",
+      "relationType": "mocks"
+    },
+    {
+      "from": "IUnitOfWork",
+      "to": "IRepository<T>",
+      "relationType": "provides access to"
+    },
+    {
+      "from": "ElectricityShop.Application",
+      "to": "ElectricityShop.Domain",
+      "relationType": "depends on"
+    },
+    {
+      "from": "ElectricityShop.Infrastructure",
+      "to": "ElectricityShop.Domain",
+      "relationType": "depends on"
+    },
+    {
+      "from": "ElectricityShop.Infrastructure",
+      "to": "ElectricityShop.Application",
+      "relationType": "depends on"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "ElectricityShop.Domain",
+      "relationType": "depends on"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "ElectricityShop.Application",
+      "relationType": "depends on"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "ElectricityShop.Infrastructure",
+      "relationType": "depends on"
+    },
+    {
+      "from": "ElectricityShop.API.Tests",
+      "to": "ElectricityShop.API",
+      "relationType": "tests"
+    },
+    {
+      "from": "ElectricityShop.API.Tests",
+      "to": "ElectricityShop.Infrastructure",
+      "relationType": "references"
+    },
+    {
+      "from": "ElectricityShop.API.Tests",
+      "to": "ElectricityShop.Application",
+      "relationType": "references"
+    },
+    {
+      "from": "ElectricityShop.API.Tests",
+      "to": "ElectricityShop.Domain",
+      "relationType": "references"
+    },
+    {
+      "from": "ElectricityShop.Domain",
+      "to": "BaseEntity",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Domain",
+      "to": "Product",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Domain",
+      "to": "IRepository<T>",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Domain",
+      "to": "IUnitOfWork",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Application",
+      "to": "IApplicationDbContext",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Application",
+      "to": "ValidationBehavior<TRequest, TResponse>",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Infrastructure",
+      "to": "ApplicationDbContext",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Infrastructure",
+      "to": "Repository<T>",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.Infrastructure",
+      "to": "UnitOfWork",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "Program",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "TelemetryExampleController",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "TelemetryExampleControllerV2",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "TelemetryExtensions",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "ApiMetrics",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "RequestTelemetryMiddleware",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "TelemetryLoginRequest",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API",
+      "to": "OrderRequest",
+      "relationType": "contains"
+    },
+    {
+      "from": "ElectricityShop.API.Tests",
+      "to": "ApiWebApplicationFactory",
+      "relationType": "contains"
+    },
+    {
+      "from": "TelemetryExtensions",
+      "to": "ApiMetrics",
+      "relationType": "uses"
+    },
+    {
+      "from": "RequestTelemetryMiddleware",
+      "to": "ApiMetrics",
+      "relationType": "uses"
+    },
+    {
+      "from": "Program",
+      "to": "RequestTelemetryMiddleware",
+      "relationType": "configures"
+    }
+  ],
+  "circularDependencies": [
+    {
+      "path": ["ElectricityShop.Infrastructure", "ElectricityShop.Application", "ElectricityShop.Infrastructure"],
+      "description": "Infrastructure implements Application interfaces but was directly using Infrastructure types"
+    }
+  ],
+  "fixes": [
+    {
+      "issue": "Circular dependency between Application and Infrastructure",
+      "solution": "Modified Repository and UnitOfWork to use IApplicationDbContext instead of ApplicationDbContext",
+      "location": "ElectricityShop.Infrastructure.Persistence.Repositories.Repository<T>"
+    },
+    {
+      "issue": "Missing Set<TEntity> and Entry<TEntity> methods in IApplicationDbContext",
+      "solution": "Added these methods to the interface to support repository operations",
+      "location": "ElectricityShop.Application.Common.Interfaces.IApplicationDbContext"
+    },
+    {
+      "issue": "Duplicate model classes causing ambiguity",
+      "solution": "Moved TelemetryLoginRequest and OrderRequest to shared Models folder",
+      "location": "ElectricityShop.API.Models.TelemetryModels"
+    },
+    {
+      "issue": "Controller naming conflict",
+      "solution": "Renamed TelemetryExampleControllerNew to TelemetryExampleControllerV2",
+      "location": "ElectricityShop.API.Controllers.TelemetryExampleControllerV2"
+    },
+    {
+      "issue": "OpenTelemetry package version inconsistencies",
+      "solution": "Standardized all packages to version 1.11.1 or appropriate compatible beta versions",
+      "location": "ElectricityShop.API.csproj"
+    },
+    {
+      "issue": "Missing extension methods for OpenTelemetry",
+      "solution": "Updated TelemetryExtensions to use the new API pattern with WithMetrics() and WithTracing()",
+      "location": "ElectricityShop.API.Infrastructure.Telemetry.TelemetryExtensions"
+    },
+    {
+      "issue": "Expression tree optional arguments in tests",
+      "solution": "Used delegates in Returns() method to avoid expression trees with optional arguments",
+      "location": "ElectricityShop.API.Tests.Integration.ApiWebApplicationFactory"
+    },
+    {
+      "issue": "Incorrect parameter type in mocked methods",
+      "solution": "Fixed method signatures to use CancellationToken instead of bool in ApiWebApplicationFactory",
+      "location": "ElectricityShop.API.Tests.Integration.ApiWebApplicationFactory"
+    },
+    {
+      "issue": "Non-nullable string properties not initialized",
+      "solution": "Added proper initialization for non-nullable string properties in AuthenticationResult",
+      "location": "ElectricityShop.API.Tests.Common.AuthenticationResult"
+    }
+  ]
+}

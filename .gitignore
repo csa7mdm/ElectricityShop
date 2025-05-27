@@ -81,4 +81,8 @@ htmlcov/
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
+<<<<<<< HEAD
 .pub/
+=======
+.pub/
+>>>>>>> master

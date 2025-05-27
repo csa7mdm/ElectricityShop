@@ -1,6 +1,7 @@
 using System;
 using ElectricityShop.Application.Common.Interfaces;
 using ElectricityShop.Domain.Interfaces;
+using ElectricityShop.Infrastructure.Caching;
 using ElectricityShop.Infrastructure.Identity.Context;
 using ElectricityShop.Infrastructure.Identity.Models;
 using ElectricityShop.Infrastructure.Identity.Services;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
+using StackExchange.Redis;
 using System.Text;
 
 namespace ElectricityShop.Infrastructure.Extensions
@@ -30,6 +32,9 @@ namespace ElectricityShop.Infrastructure.Extensions
                         b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
                         b.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
                     }));
+            
+            // Register the ApplicationDbContext as IApplicationDbContext
+            services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
             // Add Identity DbContext with retry on failure
             services.AddDbContext<AppIdentityDbContext>(options =>
@@ -106,6 +111,31 @@ namespace ElectricityShop.Infrastructure.Extensions
             });
 
             services.AddSingleton<EventBusRabbitMQ>();
+
+            // Add caching services
+            services.AddCaching(configuration);
+
+            return services;
+        }
+
+        public static IServiceCollection AddCaching(this IServiceCollection services, IConfiguration configuration)
+        {
+            // Configure redis cache settings
+            services.Configure<RedisCacheSettings>(configuration.GetSection("Redis"));
+            
+            var redisSettings = new RedisCacheSettings();
+            configuration.GetSection("Redis").Bind(redisSettings);
+
+            // Register redis connection
+            services.AddSingleton<IConnectionMultiplexer>(sp => 
+                ConnectionMultiplexer.Connect(redisSettings.ConnectionString ?? "localhost:6379"));
+            
+            // Register cache statistics
+            services.AddSingleton<CacheStatistics>();
+            
+            // Register cache services
+            services.AddSingleton<ICacheService, RedisCacheService>();
+            services.AddSingleton<ICacheInvalidationService, CacheInvalidationService>();
 
             return services;
         }

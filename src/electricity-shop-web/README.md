@@ -1,70 +1,217 @@
-# Getting Started with Create React App
+# ElectricityShop - React Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is the React-based frontend for the ElectricityShop e-commerce application. It was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Project Overview
 
-In the project directory, you can run:
+This frontend application aims to provide a user-friendly interface for customers to browse products, manage their shopping cart, place orders, and manage their accounts on the ElectricityShop platform. It interacts with the backend API services provided by the ElectricityShop main application.
 
-### `npm start`
+## Backend API Integration Status
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The backend API has been significantly developed, and the following features are now supported by available endpoints. Frontend development can proceed with integrating these functionalities.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Product Features
+- **Fetch Product List:** APIs are ready to deliver a list of products. Basic search by product name/description and filtering by CategoryId is supported.
+- **Fetch Product Details:** API for retrieving detailed information for a specific product is available.
+- **Product Management (Admin):** APIs for creating, updating, and deleting products are available (admin-only).
 
-### `npm test`
+### Shopping Cart Features
+- **View Cart:** API to get the current user's shopping cart is functional.
+- **Add to Cart:** API to add items to the user's cart is functional.
+- **Update Cart Item:** API to update the quantity of an item in the cart (including setting quantity to 0 to remove) is functional.
+- **Remove Cart Item:** API to remove an item directly from the cart is functional.
+- **Clear Cart:** API to clear all items from the user's cart is functional.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Order Features
+- **Create Order:** API to create a new order from the items in the cart is ready.
+- **View Orders:** APIs to fetch a user's order history and details of a specific order are available.
+- **Cancel Order:** API to cancel an order (if it's in a cancelable state) is functional.
+- **Process Payment:** API for processing payments for an order is available (currently simulated on the backend).
 
-### `npm run build`
+### Authentication
+- User registration, login, and JWT token refresh functionalities are available via backend APIs.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**For detailed API endpoint documentation, please refer to the main project `README.md` in the root directory.**
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Development Focus / Next Steps
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+With the backend APIs in place for core e-commerce functionalities, frontend development can focus on:
+- Building UI components for product listing, product details, and product filtering/search.
+- Implementing the shopping cart view and user interactions (add, update, remove items).
+- Developing the multi-step checkout process UI, including order summary and payment form.
+- Creating UI for users to view their order history and individual order details.
+- Implementing user registration and login forms.
+- State management for cart, user session, and product data.
+- Integrating with the backend services for all the features listed above.
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# Getting Started with Create React App (Original Readme)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+ElectricityShop is a modern React e-commerce application for electrical products, built with TypeScript and Material-UI.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Features
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **User Authentication**
+  - JWT-based authentication
+  - User registration and login
+  - Protected routes
+  - Role-based access control (Admin/User)
 
-## Learn More
+- **Product Catalog**
+  - Responsive product grid
+  - Filtering & searching
+  - Pagination
+  - Detailed product view
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **Shopping Cart**
+  - Real-time cart management
+  - Add/remove items
+  - Update quantities
+  - Price calculations
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- **Checkout Flow**
+  - Multi-step checkout process
+  - Address management
+  - Payment integration
 
-### Code Splitting
+- **User Dashboard**
+  - Order history
+  - Profile management
+  - Address management
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- **Admin Panel**
+  - Product management (CRUD)
+  - Order management
+  - User management
+  - Analytics dashboard
 
-### Analyzing the Bundle Size
+## Tech Stack
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- **Frontend:**
+  - React 18+ with TypeScript
+  - Material-UI v5
+  - Redux Toolkit
+  - React Router v6
+  - React Hook Form + Yup
+  - Axios
 
-### Making a Progressive Web App
+- **Testing:**
+  - Jest
+  - React Testing Library
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Project Structure
 
-### Advanced Configuration
+```
+src/
+  ├── assets/           # Static assets (images, icons, etc.)
+  ├── components/
+  │   ├── common/       # Reusable UI components
+  │   ├── layout/       # Layout components (Header, Footer, etc.)
+  │   └── features/     # Feature-specific components
+  ├── config/           # Configuration files
+  ├── hooks/            # Custom React hooks
+  ├── pages/            # Page components
+  ├── services/         # API services
+  ├── store/            # Redux store setup and slices
+  ├── types/            # TypeScript type definitions
+  └── utils/            # Utility functions
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Getting Started
 
-### Deployment
+### Prerequisites
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- Node.js (v16+)
+- npm or yarn
 
-### `npm run build` fails to minify
+### Installation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/electricity-shop.git
+   cd electricity-shop
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+REACT_APP_API_URL=http://your-backend-api-url
+```
+
+## API Integration
+
+The application integrates with the following API endpoints:
+
+- Authentication: `/api/auth/`
+- Products: `/api/products/`
+- Cart: `/api/cart/`
+- Orders: `/api/orders/`
+- Users: `/api/users/`
+
+## Building for Production
+
+```bash
+npm run build
+# or
+yarn build
+```
+
+This creates a `build` folder with production-ready files.
+
+## Testing
+
+```bash
+# Run tests
+npm test
+# or
+yarn test
+
+# Run tests with coverage
+npm run coverage
+# or
+yarn coverage
+```
+
+## Performance Targets
+
+- First Contentful Paint < 2s
+- Time to Interactive < 3.5s
+- Lighthouse score > 90
+
+## Security Measures
+
+- CSRF protection
+- XSS prevention
+- Secure token storage
+- Input sanitization
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -m 'Add my feature'`
+4. Push to the branch: `git push origin feature/my-feature`
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

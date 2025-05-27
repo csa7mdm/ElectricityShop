@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
+using RabbitMQ.Client; // Ensuring this line is present as per instruction
 using RabbitMQ.Client.Events;
 
 namespace ElectricityShop.Infrastructure.Events

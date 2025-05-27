@@ -2,6 +2,7 @@ using System;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events; // Added for ShutdownEventArgs
 
 namespace ElectricityShop.Infrastructure.Events
 {
@@ -63,9 +64,11 @@ namespace ElectricityShop.Infrastructure.Events
 
             _connection = factory.CreateConnection();
             
-            _connection.ConnectionShutdown += (sender, args) =>
+            // Ensure the handler matches AsyncEventHandler<ShutdownEventArgs> and uses a valid property
+            _connection.ConnectionShutdown += async (sender, args) =>
             {
-                _logger.LogWarning("RabbitMQ connection shutdown. Reason: {Reason}", args.Reason);
+                _logger.LogWarning("RabbitMQ connection shutdown. Reason: {Reason}", args.ReplyText); // Changed args.Reason to args.ReplyText
+                await Task.CompletedTask; // Added to satisfy async Task return type
             };
 
             return _connection;

@@ -79,7 +79,7 @@ namespace ElectricityShop.Infrastructure.Services
         /// <returns>The created order ID</returns>
         public async Task<Guid> CreateOrderAsync(
             Guid customerId, 
-            IEnumerable<OrderItemDto> items,
+            IEnumerable<ElectricityShop.Application.Common.Interfaces.OrderItemDto> items, // CS0535: Explicitly use interface DTO
             CancellationToken cancellationToken = default)
         {
             var orderRepository = _unitOfWork.GetRepository<Order>();
@@ -117,10 +117,10 @@ namespace ElectricityShop.Infrastructure.Services
             var orderPlacedEvent = new OrderPlacedEvent(
                 order.Id,
                 order.CustomerId,
-                order.Items.Select(item => new Domain.Events.Orders.OrderItemDto
+                order.Items.Select(item => new ElectricityShop.Domain.Events.Orders.OrderItemDto // CS0104: Fully qualify if ambiguous. Assumed this is the line.
                 {
                     ProductId = item.ProductId,
-                    ProductName = item.ProductName,
+                    ProductName = item.ProductName, // This relies on Domain.Entities.OrderItem having ProductName
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice
                 }),

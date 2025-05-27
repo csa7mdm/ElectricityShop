@@ -1,13 +1,3 @@
-using ElectricityShop.Application.Common.Interfaces;
-using ElectricityShop.Domain.Entities;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using ElectricityShop.Application.Features.Products.Commands.Dtos; // For ProductImageUpdateDto, ProductAttributeUpdateDto
 using ElectricityShop.Domain.Entities;
 using ElectricityShop.Domain.Interfaces;
 using MediatR;
@@ -65,7 +55,8 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
                 }
                 else
                 {
-                    product.CategoryId = null; // Set to no category
+                    // With this corrected line:
+                    product.CategoryId = Guid.Empty; // Set to no category
                 }
             }
 
@@ -85,10 +76,10 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
             {
                 foreach (var imageDto in command.Images)
                 {
-                    product.Images.Add(new ProductImage 
-                    { 
-                        ImageUrl = imageDto.ImageUrl, 
-                        IsMain = imageDto.IsMain 
+                    product.Images.Add(new ProductImage
+                    {
+                        ImageUrl = imageDto.ImageUrl,
+                        IsMain = imageDto.IsMain
                         // ProductId will be set by EF Core
                     });
                 }
@@ -102,10 +93,10 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
             {
                 foreach (var attributeDto in command.Attributes)
                 {
-                    product.Attributes.Add(new ProductAttribute 
-                    { 
-                        Name = attributeDto.Name, 
-                        Value = attributeDto.Value 
+                    product.Attributes.Add(new ProductAttribute
+                    {
+                        Name = attributeDto.Name,
+                        Value = attributeDto.Value
                         // ProductId will be set by EF Core
                     });
                 }
@@ -113,7 +104,7 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
 
             // Persist Changes
             await _productRepository.UpdateAsync(product);
-            
+
             _logger.LogInformation("Product updated successfully. ProductId: {ProductId}", command.Id);
             return true;
         }

@@ -1,12 +1,11 @@
-using ElectricityShop.Application.Common.Interfaces;
+using ElectricityShop.Application.Common.Interfaces; // For IRepository
 using ElectricityShop.Application.Features.Products.Queries;
 using ElectricityShop.Application.Features.Products.Queries.Handlers;
 using ElectricityShop.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging; // For ILogger
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Generic; // For List
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -15,162 +14,140 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
 {
     public class GetProductByIdQueryTests
     {
-        private readonly Mock<IApplicationDbContext> _contextMock;
-        private readonly Mock<ICacheService> _cacheServiceMock;
+        private readonly Mock<IRepository<Product>> _productRepositoryMock;
+        private readonly Mock<IRepository<Category>> _categoryRepositoryMock;
+        private readonly Mock<ILogger<GetProductByIdQueryHandler>> _loggerMock;
         private readonly GetProductByIdQueryHandler _handler;
+
+        private readonly Guid _productId = Guid.NewGuid();
+        private readonly Guid _categoryId = Guid.NewGuid();
         
         public GetProductByIdQueryTests()
         {
-            _contextMock = new Mock<IApplicationDbContext>();
-            _cacheServiceMock = new Mock<ICacheService>();
-            _handler = new GetProductByIdQueryHandler(_contextMock.Object, _cacheServiceMock.Object);
+            _productRepositoryMock = new Mock<IRepository<Product>>();
+            _categoryRepositoryMock = new Mock<IRepository<Category>>();
+            _loggerMock = new Mock<ILogger<GetProductByIdQueryHandler>>();
+            
+            _handler = new GetProductByIdQueryHandler(
+                _loggerMock.Object, 
+                _productRepositoryMock.Object, 
+                _categoryRepositoryMock.Object);
         }
         
         [Fact]
-        public async Task Handle_CacheHit_ReturnsFromCache()
+        public async Task Handle_ProductExists_ReturnsProductDto()
         {
             // Arrange
-            var productId = Guid.NewGuid();
-            var cacheKey = $"product:{productId}";
-            
-            var cachedProduct = new ProductDto
-            {
-                Id = productId,
-                Name = "Cached Product",
-                Description = "From Cache",
-                Price = 9.99m
-            };
-            
-            _cacheServiceMock.Setup(x => x.GetAsync<ProductDto>(cacheKey))
-                .ReturnsAsync(cachedProduct);
-                
-            var query = new GetProductByIdQuery { Id = productId };
-            
-            // Act
-            var result = await _handler.Handle(query, CancellationToken.None);
-            
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(productId, result.Id);
-            Assert.Equal("Cached Product", result.Name);
-            
-            // Verify cache was checked
-            _cacheServiceMock.Verify(x => x.GetAsync<ProductDto>(cacheKey), Times.Once);
-            
-            // Verify database was not queried
-            _contextMock.Verify(x => x.Products, Times.Never);
-        }
-        
-        [Fact]
-        public async Task Handle_CacheMiss_QueriesDatabaseAndCaches()
-        {
-            // Arrange
-            var productId = Guid.NewGuid();
-            var categoryId = Guid.NewGuid();
-            var cacheKey = $"product:{productId}";
-            
-            // Setup cache miss
-            _cacheServiceMock.Setup(x => x.GetAsync<ProductDto>(cacheKey))
-                .ReturnsAsync((ProductDto)null);
-                
-            // Setup database result
             var product = new Product
             {
-                Id = productId,
-                Name = "Database Product",
-                Description = "From Database",
+                Id = _productId,
+                Name = "Test Product",
+                Description = "Test Description",
                 Price = 19.99m,
-                CategoryId = categoryId
+                CategoryId = _categoryId,
+                Images = new List<ProductImage>(), // Ensure collections are not null
+                Attributes = new List<ProductAttribute>() // Ensure collections are not null
             };
             
             var category = new Category
             {
-                Id = categoryId,
-                Name = "Test Category"
+                Id = _categoryId,
+                Name = "Test Category",
+                Description = "Test Category Description" // CS9035 fix
             };
             
-            // Mock the join query result
-            var products = new[] { product }.AsQueryable();
-            var categories = new[] { category }.AsQueryable();
-            
-            var productsMock = MockDbSet(products);
-            var categoriesMock = MockDbSet(categories);
-            
-            _contextMock.Setup(ctx => ctx.Products).Returns(productsMock.Object);
-            _contextMock.Setup(ctx => ctx.Categories).Returns(categoriesMock.Object);
-            
-            // Setup the DbContext to return our product when queried
-            var query = new GetProductByIdQuery { Id = productId };
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(category); // CS1061 fix (part 1)
+                
+            var query = new GetProductByIdQuery { ProductId = _productId }; // CS0117 fix: Use ProductId
             
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(productId, result.Id);
-            Assert.Equal("Database Product", result.Name);
-            
-            // Verify cache was checked
-            _cacheServiceMock.Verify(x => x.GetAsync<ProductDto>(cacheKey), Times.Once);
-            
-            // Verify result was cached
-            _cacheServiceMock.Verify(x => x.SetAsync(
-                cacheKey, 
-                It.Is<ProductDto>(p => p.Id == productId), 
-                It.IsAny<TimeSpan?>()), 
-                Times.Once);
+            Assert.Equal(_productId, result.Id);
+            Assert.Equal("Test Product", result.Name);
+            Assert.Equal("Test Category", result.CategoryName); // Handler fetches category name
+
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()), Times.Once);
+            _categoryRepositoryMock.Verify(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()), Times.Once);
         }
         
+        [Fact]
+        public async Task Handle_ProductExists_CategoryPreloaded_ReturnsProductDto()
+        {
+            // Arrange
+            var category = new Category
+            {
+                Id = _categoryId,
+                Name = "Test Category",
+                Description = "Test Category Description" 
+            };
+            var product = new Product
+            {
+                Id = _productId,
+                Name = "Test Product",
+                Description = "Test Description",
+                Price = 19.99m,
+                CategoryId = _categoryId,
+                Category = category, // Category is preloaded
+                Images = new List<ProductImage>(),
+                Attributes = new List<ProductAttribute>()
+            };
+            
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            // No setup for _categoryRepositoryMock.GetByIdAsync needed if Category is preloaded in Product
+                
+            var query = new GetProductByIdQuery { ProductId = _productId };
+            
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(_productId, result.Id);
+            Assert.Equal("Test Product", result.Name);
+            Assert.Equal("Test Category", result.CategoryName);
+
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()), Times.Once);
+            _categoryRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never); // Verify category repo not called
+        }
+
         [Fact]
         public async Task Handle_ProductNotFound_ReturnsNull()
         {
             // Arrange
-            var productId = Guid.NewGuid();
-            var cacheKey = $"product:{productId}";
+            var nonExistentProductId = Guid.NewGuid();
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Product)null);
             
-            // Setup cache miss
-            _cacheServiceMock.Setup(x => x.GetAsync<ProductDto>(cacheKey))
-                .ReturnsAsync((ProductDto)null);
+            // No need to setup _categoryRepositoryMock for this case, as product fetch is first
+            // _categoryRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Category)null); // CS1061 fix (part 2) - not strictly needed here
                 
-            // Empty database result
-            var products = new List<Product>().AsQueryable();
-            var categories = new List<Category>().AsQueryable();
-            
-            var productsMock = MockDbSet(products);
-            var categoriesMock = MockDbSet(categories);
-            
-            _contextMock.Setup(ctx => ctx.Products).Returns(productsMock.Object);
-            _contextMock.Setup(ctx => ctx.Categories).Returns(categoriesMock.Object);
-            
-            var query = new GetProductByIdQuery { Id = productId };
+            var query = new GetProductByIdQuery { ProductId = nonExistentProductId }; // CS0117 fix
             
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             
             // Assert
             Assert.Null(result);
-            
-            // Verify cache was checked
-            _cacheServiceMock.Verify(x => x.GetAsync<ProductDto>(cacheKey), Times.Once);
-            
-            // Verify result was not cached (because it's null)
-            _cacheServiceMock.Verify(x => x.SetAsync(
-                It.IsAny<string>(), 
-                It.IsAny<ProductDto>(), 
-                It.IsAny<TimeSpan?>()), 
-                Times.Never);
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()), Times.Once);
         }
         
-        // Helper method for mocking DbSet
-        private static Mock<DbSet<T>> MockDbSet<T>(IQueryable<T> data) where T : class
-        {
-            var mock = new Mock<DbSet<T>>();
-            mock.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
-            mock.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
-            mock.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
-            mock.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
+        // MockDbSet helper is no longer needed as we are using IRepository mocks
+        // private static Mock<DbSet<T>> MockDbSet<T>(IQueryable<T> data) where T : class
+        // {
+        //     var mock = new Mock<DbSet<T>>();
+        //     mock.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
+        //     mock.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
+        //     mock.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
+        //     mock.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
             
-            return mock;
-        }
+        //     return mock;
+        // }
     }
 }

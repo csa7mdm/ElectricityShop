@@ -61,11 +61,13 @@ namespace ElectricityShop.Infrastructure.Events
                 factory.Ssl = new SslOption { Enabled = true };
             }
 
-            _connection = (IConnection?)factory.CreateConnectionAsync();
+            _connection = factory.CreateConnection();
 
-            _connection.ConnectionShutdownAsync += (sender, args) =>
+            // Ensure the handler matches AsyncEventHandler<ShutdownEventArgs> and uses a valid property
+            _connection.ConnectionShutdown += async (sender, args) =>
             {
-                _logger.LogWarning("RabbitMQ connection shutdown. Reason: {Reason}", args.Reason);
+                _logger.LogWarning("RabbitMQ connection shutdown. Reason: {Reason}", args.ReplyText); // Changed args.Reason to args.ReplyText
+                await Task.CompletedTask; // Added to satisfy async Task return type
             };
 
             return _connection;

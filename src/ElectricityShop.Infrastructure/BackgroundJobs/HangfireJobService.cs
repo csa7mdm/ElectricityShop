@@ -1,7 +1,5 @@
 using ElectricityShop.Application.Common.Interfaces;
 using Hangfire;
-using System;
-using System.Threading.Tasks;
 
 namespace ElectricityShop.Infrastructure.BackgroundJobs
 {

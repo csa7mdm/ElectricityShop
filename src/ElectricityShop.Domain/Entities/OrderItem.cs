@@ -1,5 +1,3 @@
-using System;
-
 namespace ElectricityShop.Domain.Entities
 {
     /// <summary>
@@ -11,32 +9,32 @@ namespace ElectricityShop.Domain.Entities
         /// Gets or sets the order ID
         /// </summary>
         public Guid OrderId { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the product ID
         /// </summary>
         public Guid ProductId { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the product name
         /// </summary>
         public string ProductName { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the quantity
         /// </summary>
         public int Quantity { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the unit price
         /// </summary>
         public decimal UnitPrice { get; set; }
-        
+
         /// <summary>
         /// Gets the subtotal (quantity * unit price)
         /// </summary>
         public decimal Subtotal => Quantity * UnitPrice;
-        
+
         /// <summary>
         /// Gets or sets the order
         /// </summary>

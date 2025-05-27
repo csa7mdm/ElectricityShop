@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-
 namespace ElectricityShop.Domain.Entities
 {
     /// <summary>
     /// Represents an order
     /// </summary>
-using ElectricityShop.Domain.Enums; // Required for OrderStatus and PaymentMethod
+    using ElectricityShop.Domain.Enums; // Required for OrderStatus and PaymentMethod
 
     public class Order : BaseEntity
     {
@@ -14,7 +11,7 @@ using ElectricityShop.Domain.Enums; // Required for OrderStatus and PaymentMetho
         /// Gets or sets the user ID who placed the order
         /// </summary>
         public Guid UserId { get; set; } // Renamed from CustomerId for consistency
-        
+
         /// <summary>
         /// Gets or sets the unique order number
         /// </summary>
@@ -24,12 +21,12 @@ using ElectricityShop.Domain.Enums; // Required for OrderStatus and PaymentMetho
         /// Gets or sets the order status
         /// </summary>
         public OrderStatus Status { get; set; } // Changed from string to Domain.Enums.OrderStatus
-        
+
         /// <summary>
         /// Gets or sets the order date
         /// </summary>
         public DateTime OrderDate { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the total amount of the order
         /// </summary>
@@ -74,7 +71,7 @@ using ElectricityShop.Domain.Enums; // Required for OrderStatus and PaymentMetho
         /// Gets or sets the shipping cost for the order
         /// </summary>
         public decimal ShippingCost { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the collection of items included in the order
         /// </summary>

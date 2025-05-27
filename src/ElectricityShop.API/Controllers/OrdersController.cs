@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using ElectricityShop.Application.Common.Interfaces;
+using ElectricityShop.Application.Features.Orders.Commands;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.API.Controllers
 {

@@ -1,4 +1,4 @@
-using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -39,7 +39,7 @@ namespace ElectricityShop.Infrastructure.Events
                 return _connection;
             }
 
-            _logger.LogInformation("Creating new RabbitMQ connection to {HostName}:{Port}", 
+            _logger.LogInformation("Creating new RabbitMQ connection to {HostName}:{Port}",
                 _settings.HostName, _settings.Port);
 
             var factory = new ConnectionFactory
@@ -61,9 +61,9 @@ namespace ElectricityShop.Infrastructure.Events
                 factory.Ssl = new SslOption { Enabled = true };
             }
 
-            _connection = factory.CreateConnection();
-            
-            _connection.ConnectionShutdown += (sender, args) =>
+            _connection = (IConnection?)factory.CreateConnectionAsync();
+
+            _connection.ConnectionShutdownAsync += (sender, args) =>
             {
                 _logger.LogWarning("RabbitMQ connection shutdown. Reason: {Reason}", args.Reason);
             };
@@ -79,10 +79,10 @@ namespace ElectricityShop.Infrastructure.Events
         {
             var connection = GetConnection();
             var channel = connection.CreateModel();
-            
+
             // Set QoS (prefetch) to control how many messages are delivered at once
             channel.BasicQos(prefetchSize: 0, prefetchCount: _settings.PrefetchCount, global: false);
-            
+
             return channel;
         }
 

@@ -6,6 +6,9 @@ namespace ElectricityShop.Domain.Enums
         Processing,
         Shipped,
         Delivered,
-        Cancelled
+        Cancelled,
+        PaymentProcessed,
+        PaymentPending,
+        Failed
     }
 }

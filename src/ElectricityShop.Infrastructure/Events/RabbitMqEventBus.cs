@@ -1,13 +1,11 @@
-using System;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using ElectricityShop.Application.Common.Events;
 using ElectricityShop.Domain.Events;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using System.Text;
+using System.Text.Json;
 
 namespace ElectricityShop.Infrastructure.Events
 {
@@ -36,7 +34,7 @@ namespace ElectricityShop.Infrastructure.Events
             _connectionFactory = connectionFactory;
             _settings = options.Value;
             _logger = logger;
-            
+
             Initialize();
         }
 
@@ -47,7 +45,7 @@ namespace ElectricityShop.Infrastructure.Events
         /// <param name="event">The event to publish</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>A task representing the asynchronous operation</returns>
-        public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) 
+        public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
             where TEvent : IDomainEvent
         {
             if (@event == null)

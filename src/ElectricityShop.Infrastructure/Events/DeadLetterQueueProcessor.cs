@@ -1,14 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using ElectricityShop.Application.Common.Interfaces;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System.Text;
 
 namespace ElectricityShop.Infrastructure.Events
 {
@@ -55,7 +53,7 @@ namespace ElectricityShop.Infrastructure.Events
 
             // Set up error queue processing
             var eventTypeRegistry = _serviceProvider.GetRequiredService<EventTypeRegistry>();
-            
+
             foreach (var registration in eventTypeRegistry.EventTypes)
             {
                 var eventName = registration.Key;
@@ -63,12 +61,12 @@ namespace ElectricityShop.Infrastructure.Events
                 var errorQueueName = $"electricity_shop.{routingKey}.error";
 
                 // Start consuming from the error queue
-                var consumer = new AsyncEventingBasicConsumer(_channel);
-                consumer.Received += async (model, ea) => 
+                var consumer = new AsyncEventingBasicConsumer((IChannel)_channel);
+                consumer.ReceivedAsync += async (model, ea) =>
                     await ProcessDeadLetterMessageAsync(ea, errorQueueName, stoppingToken);
 
                 _channel.BasicConsume(queue: errorQueueName, autoAck: false, consumer: consumer);
-                
+
                 _logger.LogInformation("Started consuming messages from error queue {ErrorQueue}", errorQueueName);
             }
 
@@ -83,46 +81,46 @@ namespace ElectricityShop.Infrastructure.Events
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>A task representing the asynchronous operation</returns>
         private async Task ProcessDeadLetterMessageAsync(
-            BasicDeliverEventArgs ea, 
+            BasicDeliverEventArgs ea,
             string queueName,
             CancellationToken cancellationToken)
         {
             var message = Encoding.UTF8.GetString(ea.Body.ToArray());
             var messageId = ea.BasicProperties.MessageId;
             var eventType = ea.BasicProperties.Type;
-            
-            _logger.LogWarning("Processing failed message {MessageId} of type {EventType} from queue {QueueName}", 
+
+            _logger.LogWarning("Processing failed message {MessageId} of type {EventType} from queue {QueueName}",
                 messageId, eventType, queueName);
 
             // Extract error information from headers
             var error = "Unknown error";
-            if (ea.BasicProperties.Headers != null && 
+            if (ea.BasicProperties.Headers != null &&
                 ea.BasicProperties.Headers.TryGetValue("x-error", out var errorObj))
             {
                 error = Encoding.UTF8.GetString((byte[])errorObj);
             }
-            
+
             // Extract original exchange and routing key
             var originalExchange = _settings.ExchangeName;
             var originalRoutingKey = string.Empty;
-            
+
             if (ea.BasicProperties.Headers != null)
             {
                 if (ea.BasicProperties.Headers.TryGetValue("x-original-exchange", out var exchangeObj))
                 {
                     originalExchange = Encoding.UTF8.GetString((byte[])exchangeObj);
                 }
-                
+
                 if (ea.BasicProperties.Headers.TryGetValue("x-original-routing-key", out var routingKeyObj))
                 {
                     originalRoutingKey = Encoding.UTF8.GetString((byte[])routingKeyObj);
                 }
             }
-            
+
             // Log the failed message
             await using var scope = _serviceProvider.CreateAsyncScope();
             var failedMessageLogger = scope.ServiceProvider.GetService<IFailedMessageLogger>();
-            
+
             if (failedMessageLogger != null)
             {
                 await failedMessageLogger.LogFailedMessageAsync(
@@ -135,11 +133,11 @@ namespace ElectricityShop.Infrastructure.Events
                     DateTime.UtcNow,
                     cancellationToken);
             }
-            
+
             // Acknowledge the message to remove it from the queue
             _channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
-            
-            _logger.LogInformation("Failed message {MessageId} logged and removed from queue {QueueName}", 
+
+            _logger.LogInformation("Failed message {MessageId} logged and removed from queue {QueueName}",
                 messageId, queueName);
         }
 
@@ -151,13 +149,13 @@ namespace ElectricityShop.Infrastructure.Events
         public override Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Stopping dead letter queue processor");
-            
+
             if (_channel != null && _channel.IsOpen)
             {
                 _channel.Close();
                 _channel.Dispose();
             }
-            
+
             return base.StopAsync(cancellationToken);
         }
     }

@@ -1,3 +1,6 @@
+using ElectricityShop.Application.Common.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +15,20 @@ using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.Application.Features.Products.Queries.Handlers
 {
+    /// <summary>
+    /// Handler for retrieving a single product by ID
+    /// </summary>
     public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, ProductDto>
     {
         private readonly ILogger<GetProductByIdQueryHandler> _logger;
         private readonly IRepository<Product> _productRepository;
         private readonly IRepository<Category> _categoryRepository;
 
+        /// <summary>
+        /// Initializes a new instance of GetProductByIdQueryHandler
+        /// </summary>
+        /// <param name="dbContext">Application DB context</param>
+        /// <param name="cacheService">Cache service for optimized retrieval</param>
         public GetProductByIdQueryHandler(
             ILogger<GetProductByIdQueryHandler> logger,
             IRepository<Product> productRepository,
@@ -28,6 +39,9 @@ namespace ElectricityShop.Application.Features.Products.Queries.Handlers
             _categoryRepository = categoryRepository;
         }
 
+        /// <summary>
+        /// Handles the query, retrieving from cache if available
+        /// </summary>
         public async Task<ProductDto> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
         {
             _logger?.LogInformation("Attempting to fetch product by ID: {ProductId} from database", request.ProductId);

@@ -1,3 +1,6 @@
+using ElectricityShop.Application.Common.Interfaces;
+using ElectricityShop.Domain.Entities;
+using MediatR;
 using System;
 using System.Linq;
 using System.Threading;
@@ -11,12 +14,20 @@ using System.Collections.Generic; // Required for List<T>
 
 namespace ElectricityShop.Application.Features.Products.Commands.Handlers
 {
+    /// <summary>
+    /// Handler for creating a new product
+    /// </summary>
     public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Guid>
     {
         private readonly ILogger<CreateProductCommandHandler> _logger;
         private readonly IRepository<Product> _productRepository;
         private readonly IRepository<Category> _categoryRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the CreateProductCommandHandler
+        /// </summary>
+        /// <param name="dbContext">Application DB context</param>
+        /// <param name="cacheInvalidation">Cache invalidation service</param>
         public CreateProductCommandHandler(
             ILogger<CreateProductCommandHandler> logger,
             IRepository<Product> productRepository,
@@ -27,6 +38,9 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
             _categoryRepository = categoryRepository;
         }
 
+        /// <summary>
+        /// Handles the create product command
+        /// </summary>
         public async Task<Guid> Handle(CreateProductCommand request, CancellationToken cancellationToken)
         {
             _logger?.LogInformation("Attempting to create a new product with Name: {ProductName}", request.Name);

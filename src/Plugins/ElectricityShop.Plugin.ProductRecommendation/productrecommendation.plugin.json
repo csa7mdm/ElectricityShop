@@ -1,0 +1,17 @@
+{
+  "id": "ElectricityShop.Plugin.ProductRecommendation",
+  "name": "Product Recommendation Plugin",
+  "version": "1.0.0",
+  "author": "ElectricityShop",
+  "description": "Provides product recommendation functionality based on user behavior and product properties",
+  "assemblyFileName": "ElectricityShop.Plugin.ProductRecommendation.dll",
+  "typeName": "ElectricityShop.Plugin.ProductRecommendation.ProductRecommendationPlugin",
+  "configurationData": {
+    "settings": {
+      "MaxRecommendations": "5",
+      "EnableUserBasedRecommendations": "true",
+      "EnableProductBasedRecommendations": "true",
+      "MinimumSimilarityScore": "0.5"
+    }
+  }
+}

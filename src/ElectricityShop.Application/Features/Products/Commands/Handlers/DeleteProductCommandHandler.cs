@@ -9,11 +9,19 @@ using Microsoft.Extensions.Logging;         // For ILogger
 
 namespace ElectricityShop.Application.Features.Products.Commands.Handlers
 {
+    /// <summary>
+    /// Handler for deleting a product
+    /// </summary>
     public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, bool>
     {
         private readonly ILogger<DeleteProductCommandHandler> _logger;
         private readonly IRepository<Product> _productRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the DeleteProductCommandHandler
+        /// </summary>
+        /// <param name="dbContext">Application DB context</param>
+        /// <param name="cacheInvalidation">Cache invalidation service</param>
         public DeleteProductCommandHandler(
             ILogger<DeleteProductCommandHandler> logger,
             IRepository<Product> productRepository)
@@ -22,6 +30,9 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
             _productRepository = productRepository;
         }
 
+        /// <summary>
+        /// Handles the delete product command
+        /// </summary>
         public async Task<bool> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Attempting to delete product with ID: {ProductId}", request.ProductId);

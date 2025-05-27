@@ -1,3 +1,7 @@
+using ElectricityShop.Application.Common.Extensions;
+using ElectricityShop.Application.Common.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +15,9 @@ using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.Application.Features.Products.Queries.Handlers
 {
+    /// <summary>
+    /// Handler for GetProductsQuery with optimized database access
+    /// </summary>
     public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, List<ProductDto>>
     {
         private readonly ILogger<GetProductsQueryHandler> _logger;

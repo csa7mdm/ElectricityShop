@@ -1,5 +1,6 @@
 using System;
 using MediatR;
+using System;
 
 namespace ElectricityShop.Application.Features.Products.Commands
 {

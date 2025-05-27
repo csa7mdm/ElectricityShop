@@ -1,3 +1,7 @@
+using ElectricityShop.Application.Common.Interfaces;
+using ElectricityShop.Domain.Entities;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +15,20 @@ using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.Application.Features.Products.Commands.Handlers
 {
+    /// <summary>
+    /// Handler for updating a product with cache invalidation
+    /// </summary>
     public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, bool>
     {
         private readonly ILogger<UpdateProductCommandHandler> _logger;
         private readonly IRepository<Product> _productRepository;
         private readonly IRepository<Category> _categoryRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the UpdateProductCommandHandler
+        /// </summary>
+        /// <param name="dbContext">Application DB context</param>
+        /// <param name="cacheInvalidation">Cache invalidation service</param>
         public UpdateProductCommandHandler(
             ILogger<UpdateProductCommandHandler> logger,
             IRepository<Product> productRepository,

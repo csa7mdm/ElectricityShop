@@ -14,6 +14,7 @@ A full-stack e-commerce application for selling electrical products, built with 
   - [Installation](#installation)
   - [Configuration](#configuration)
 - [API Documentation](#api-documentation)
+- [Common Issues and Solutions](#common-issues-and-solutions)
 - [Development Roadmap](#development-roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -154,6 +155,78 @@ Update connection strings and other settings in `appsettings.json`:
 - `POST /api/orders` - Create new order
 - `PUT /api/orders/{id}/cancel` - Cancel order
 - `POST /api/orders/{id}/pay` - Process payment (currently simulated)
+
+## 🔧 Common Issues and Solutions
+
+### Expression Trees with Optional Parameters (CS0854)
+
+**Problem**: When using Moq to mock methods with optional parameters, you may encounter error CS0854: "An expression tree may not contain a call or invocation that uses optional arguments."
+
+**Solution**:
+```csharp
+// Instead of:
+mock.Setup(x => x.InitializeAsync()).Returns(Task.CompletedTask);
+
+// Use:
+mock.Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+```
+
+### CancellationToken Parameters in Async Methods
+
+**Problem**: Test mocks incorrectly using bool parameters instead of CancellationToken in async methods.
+
+**Solution**:
+```csharp
+// Incorrect:
+mock.Setup(x => x.SomeMethodAsync(true)).Returns(Task.FromResult(true));
+
+// Correct:
+mock.Setup(x => x.SomeMethodAsync(It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+```
+
+### Non-nullable Reference Types Not Initialized (CS8618)
+
+**Problem**: Warning CS8618 when non-nullable reference types are not initialized in constructors.
+
+**Solution**:
+```csharp
+// Option 1: Initialize in constructor
+public class AuthenticationResult
+{
+    public string Token { get; set; }
+
+    public AuthenticationResult(string token)
+    {
+        Token = token;
+    }
+}
+
+// Option 2: Use nullable reference type
+public class AuthenticationResult
+{
+    public string? Token { get; set; }
+}
+
+// Option 3: Initialize with default value
+public class AuthenticationResult
+{
+    public string Token { get; set; } = string.Empty;
+}
+```
+
+### Avoiding Lambda Expressions in Moq Setup
+
+**Problem**: When combined with optional parameters, lambda expressions in Moq can trigger CS0854 errors.
+
+**Solution**:
+```csharp
+// Instead of:
+mock.Setup(x => x.SomeMethodAsync()).Returns(() => Task.FromResult(true));
+
+// Create the result object outside the expression tree:
+Task<bool> result = Task.FromResult(true);
+mock.Setup(x => x.SomeMethodAsync(It.IsAny<CancellationToken>())).Returns(result);
+```
 
 ## 🛣️ Development Roadmap
 

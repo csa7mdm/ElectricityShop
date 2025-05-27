@@ -1,0 +1,38 @@
+The following NuGet packages need to be added to the project:
+
+1. OpenTelemetry.Extensions.Hosting
+2. OpenTelemetry.Instrumentation.AspNetCore
+3. OpenTelemetry.Instrumentation.Http
+4. OpenTelemetry.Instrumentation.Runtime
+5. OpenTelemetry.Instrumentation.Process
+6. OpenTelemetry.Instrumentation.EntityFrameworkCore
+7. OpenTelemetry.Exporter.Console
+8. OpenTelemetry.Exporter.OpenTelemetryProtocol
+
+Add these packages using the following command:
+
+```
+dotnet add package OpenTelemetry.Extensions.Hosting
+dotnet add package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add package OpenTelemetry.Instrumentation.Http
+dotnet add package OpenTelemetry.Instrumentation.Runtime
+dotnet add package OpenTelemetry.Instrumentation.Process
+dotnet add package OpenTelemetry.Instrumentation.EntityFrameworkCore
+dotnet add package OpenTelemetry.Exporter.Console
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+```
+
+Or add the following package references to the .csproj file:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.8.0" />
+  <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.0" />
+</ItemGroup>
+```

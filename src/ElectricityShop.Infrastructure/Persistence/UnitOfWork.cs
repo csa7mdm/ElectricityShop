@@ -2,14 +2,14 @@ using System;
 using System.Threading.Tasks;
 using ElectricityShop.Domain.Entities;
 using ElectricityShop.Domain.Interfaces;
-using ElectricityShop.Infrastructure.Persistence.Context;
+using ElectricityShop.Application.Common.Interfaces;
 using ElectricityShop.Infrastructure.Persistence.Repositories;
 
 namespace ElectricityShop.Infrastructure.Persistence
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IApplicationDbContext _dbContext;
         private bool _disposed;
 
         private IRepository<Product> _products;
@@ -23,7 +23,7 @@ namespace ElectricityShop.Infrastructure.Persistence
         private IRepository<ProductAttribute> _productAttributes;
         private IRepository<ProductImage> _productImages;
 
-        public UnitOfWork(ApplicationDbContext dbContext)
+        public UnitOfWork(IApplicationDbContext dbContext)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
@@ -56,7 +56,10 @@ namespace ElectricityShop.Infrastructure.Persistence
             {
                 if (disposing)
                 {
-                    _dbContext.Dispose();
+                    if (_dbContext is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
                 }
             }
             _disposed = true;

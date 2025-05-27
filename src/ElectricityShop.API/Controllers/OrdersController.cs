@@ -1,29 +1,30 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using ElectricityShop.Application.Features.Orders.Commands;
-using ElectricityShop.Application.Features.Orders.Queries;
-using ElectricityShop.Domain.Enums;
-using MediatR;
-using Microsoft.AspNetCore.Authorization;
+using ElectricityShop.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace ElectricityShop.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class OrdersController : ControllerBase
     {
-        private readonly IMediator _mediator;
+        private readonly IOrderService _orderService;
+        private readonly ILogger<OrdersController> _logger;
 
-        public OrdersController(IMediator mediator)
+        public OrdersController(
+            IOrderService orderService,
+            ILogger<OrdersController> logger)
         {
-            _mediator = mediator;
+            _orderService = orderService;
+            _logger = logger;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<List<OrderDto>>> GetOrders([FromQuery] GetOrdersQuery query)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<OrderDto>> GetOrder(Guid id, CancellationToken cancellationToken)
         {
             // Get current user ID from claims
             var userId = Guid.Parse(User.FindFirst("id")?.Value);
@@ -53,14 +54,22 @@ namespace ElectricityShop.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Guid>> CreateOrder([FromBody] CreateOrderCommand command)
+        public async Task<ActionResult<Guid>> CreateOrder(CreateOrderRequest request, CancellationToken cancellationToken)
         {
-            // Get current user ID from claims
-            var userId = Guid.Parse(User.FindFirst("id")?.Value);
-            command.UserId = userId;
+            try
+            {
+                var orderId = await _orderService.CreateOrderAsync(
+                    request.CustomerId,
+                    request.Items,
+                    cancellationToken);
 
-            var orderId = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetOrder), new { id = orderId }, orderId);
+                return Ok(orderId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating order for customer {CustomerId}", request.CustomerId);
+                return StatusCode(500, "An error occurred while processing your request");
+            }
         }
 
         [HttpPut("{id}/cancel")]
@@ -128,23 +137,16 @@ namespace ElectricityShop.API.Controllers
         }
     }
 
-    public class ProcessPaymentRequest
+    public class UpdateOrderStatusRequest
     {
-        public string CardNumber { get; set; }
-        public string CardHolderName { get; set; }
-        public string ExpiryMonth { get; set; }
-        public string ExpiryYear { get; set; }
-        public string CVV { get; set; }
-        public BillingAddressDto BillingAddress { get; set; }
+        public string NewStatus { get; set; }
+        public Guid? UpdatedById { get; set; }
+        public string Notes { get; set; }
     }
 
-    public class BillingAddressDto
+    public class CancelOrderRequest
     {
-        public string AddressLine1 { get; set; }
-        public string AddressLine2 { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string Country { get; set; }
-        public string ZipCode { get; set; }
+        public string Reason { get; set; }
+        public Guid? CancelledById { get; set; }
     }
 }

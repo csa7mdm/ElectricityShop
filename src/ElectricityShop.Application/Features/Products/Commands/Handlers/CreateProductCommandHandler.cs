@@ -68,8 +68,9 @@ namespace ElectricityShop.Application.Features.Products.Commands.Handlers
                 Description = request.Description,
                 Price = request.Price,
                 StockQuantity = request.StockQuantity,
-                // Handle null CategoryId for products without a category
-                CategoryId = request.CategoryId == Guid.Empty ? (Guid?)null : request.CategoryId,
+                // Assign CategoryId directly; validation should ensure it's valid or Guid.Empty if allowed.
+                // The original ternary caused Guid? which is incompatible with Product.CategoryId (Guid).
+                CategoryId = request.CategoryId,
                 IsActive = request.IsActive,
                 Images = new List<ProductImage>(),      // Initialize collections
                 Attributes = new List<ProductAttribute>() // Initialize collections

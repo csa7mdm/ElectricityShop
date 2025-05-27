@@ -28,5 +28,20 @@ namespace ElectricityShop.Application.Features.Products.Commands
         /// Category ID
         /// </summary>
         public Guid CategoryId { get; set; }
+
+        /// <summary>
+        /// Indicates if the product is active. Defaults to true.
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// Collection of images for the product.
+        /// </summary>
+        public ICollection<ProductImageDto> Images { get; set; } = new List<ProductImageDto>();
+
+        /// <summary>
+        /// Collection of attributes for the product.
+        /// </summary>
+        public ICollection<ProductAttributeDto> Attributes { get; set; } = new List<ProductAttributeDto>();
     }
 }

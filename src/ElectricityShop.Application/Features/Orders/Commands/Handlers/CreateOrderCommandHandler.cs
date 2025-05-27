@@ -1,6 +1,7 @@
 using ElectricityShop.Application.Common.Interfaces;
-using ElectricityShop.Application.Features.Orders.Models;
+using ElectricityShop.Application.Features.Orders.Models; // For OrderStatus (Application layer)
 using ElectricityShop.Domain.Entities;
+using ElectricityShop.Domain.Enums; // For OrderStatus, PaymentMethod (Domain layer)
 using ElectricityShop.Domain.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -50,52 +51,77 @@ namespace ElectricityShop.Application.Features.Orders.Commands.Handlers
             {
                 // Perform validation
                 // This occurs synchronously as part of the HTTP request
-                
-                // Create the order in a 'Created' or 'PaymentPending' state
+
+                // Construct shippingAddress first
+                var shippingAddress = new Address
+                {
+                    Street = request.ShippingAddress.Line1,
+                    StreetLine2 = request.ShippingAddress.Line2,
+                    City = request.ShippingAddress.City,
+                    State = request.ShippingAddress.State,
+                    ZipCode = request.ShippingAddress.PostalCode,
+                    Country = request.ShippingAddress.Country,
+                    UserId = request.UserId
+                };
+
+                // Determine billingAddress next
+                Address determinedBillingAddress;
+                if (request.BillingAddress != null)
+                {
+                    determinedBillingAddress = new Address
+                    {
+                        Street = request.BillingAddress.Line1,
+                        StreetLine2 = request.BillingAddress.Line2,
+                        City = request.BillingAddress.City,
+                        State = request.BillingAddress.State,
+                        ZipCode = request.BillingAddress.PostalCode,
+                        Country = request.BillingAddress.Country,
+                        UserId = request.UserId
+                    };
+                }
+                else
+                {
+                    // If BillingAddress is null, create a new Address instance from shipping for BillingAddress
+                    determinedBillingAddress = new Address 
+                    {
+                        Street = shippingAddress.Street,
+                        StreetLine2 = shippingAddress.StreetLine2,
+                        City = shippingAddress.City,
+                        State = shippingAddress.State,
+                        ZipCode = shippingAddress.ZipCode,
+                        Country = shippingAddress.Country,
+                        UserId = shippingAddress.UserId
+                    };
+                }
+
+                // Now create the order, including addresses in the initializer
                 var order = new Order
                 {
                     Id = Guid.NewGuid(),
                     OrderNumber = GenerateOrderNumber(),
                     UserId = request.UserId,
-                    Status = OrderStatus.PaymentPending,
-                    CreatedAt = DateTime.UtcNow,
-                    PaymentMethod = request.PaymentMethod,
+                    CreatedAt = DateTime.UtcNow, // From BaseEntity or IAuditable
+                    OrderDate = DateTime.UtcNow, // Explicitly set OrderDate
                     ShippingMethod = request.ShippingMethod,
-                    Notes = request.Notes
+                    Notes = request.Notes,
+                    ShippingAddress = shippingAddress, // Assigned in initializer
+                    BillingAddress = determinedBillingAddress, // Assigned in initializer
+                    // PaymentMethod and Status will be set after this block as they involve parsing/mapping
                 };
-                
-                // Add shipping and billing addresses
-                var shippingAddress = new Address
+
+                // Set PaymentMethod (as before)
+                if (Enum.TryParse<Domain.Enums.PaymentMethod>(request.PaymentMethod, true, out var paymentMethodEnum))
                 {
-                    Line1 = request.ShippingAddress.Line1,
-                    Line2 = request.ShippingAddress.Line2,
-                    City = request.ShippingAddress.City,
-                    State = request.ShippingAddress.State,
-                    PostalCode = request.ShippingAddress.PostalCode,
-                    Country = request.ShippingAddress.Country
-                };
-                
-                order.ShippingAddress = shippingAddress;
-                
-                // Billing address defaults to shipping address if not provided
-                if (request.BillingAddress != null)
-                {
-                    var billingAddress = new Address
-                    {
-                        Line1 = request.BillingAddress.Line1,
-                        Line2 = request.BillingAddress.Line2,
-                        City = request.BillingAddress.City,
-                        State = request.BillingAddress.State,
-                        PostalCode = request.BillingAddress.PostalCode,
-                        Country = request.BillingAddress.Country
-                    };
-                    
-                    order.BillingAddress = billingAddress;
+                    order.PaymentMethod = paymentMethodEnum;
                 }
                 else
                 {
-                    order.BillingAddress = shippingAddress;
+                    _logger.LogError("Invalid payment method received: {PaymentMethod}", request.PaymentMethod);
+                    throw new ArgumentException($"Invalid payment method: {request.PaymentMethod}");
                 }
+
+                // Set OrderStatus (as before)
+                order.Status = (Domain.Enums.OrderStatus)(int)Models.OrderStatus.PaymentPending;
                 
                 // Add order items
                 foreach (var item in request.Items)
@@ -120,15 +146,15 @@ namespace ElectricityShop.Application.Features.Orders.Commands.Handlers
                         ProductId = item.ProductId,
                         ProductName = product.Name,
                         Quantity = item.Quantity,
-                        UnitPrice = product.Price,
-                        TotalPrice = product.Price * item.Quantity
+                        UnitPrice = product.Price
+                        // TotalPrice removed, OrderItem.Subtotal (get-only) will calculate this
                     };
                     
                     order.Items.Add(orderItem);
                 }
                 
                 // Calculate order totals
-                order.Subtotal = order.Items.Sum(i => i.TotalPrice);
+                order.Subtotal = order.Items.Sum(i => i.Subtotal); // Changed from i.TotalPrice to i.Subtotal
                 // Calculate tax, shipping, discounts as needed
                 order.Tax = Math.Round(order.Subtotal * 0.1m, 2); // Example tax calculation
                 order.ShippingCost = Math.Round(order.Subtotal * 0.05m, 2); // Example shipping calculation
@@ -176,7 +202,8 @@ namespace ElectricityShop.Application.Features.Orders.Commands.Handlers
                 {
                     OrderId = order.Id,
                     OrderNumber = order.OrderNumber,
-                    Status = order.Status,
+                    // Map Domain.Enums.OrderStatus back to Application.Features.Orders.Models.OrderStatus
+                    Status = (Models.OrderStatus)(int)order.Status,
                     TrackingId = paymentJobId,
                     EstimatedCompletion = DateTime.UtcNow.AddMinutes(5) // Estimate for processing time
                 };

@@ -20,7 +20,7 @@ namespace ElectricityShop.Infrastructure.Caching
         }
         
         /// <inheritdoc />
-        public async Task InvalidateProductCacheAsync(int productId)
+        public async Task InvalidateProductCacheAsync(Guid productId)
         {
             // Remove specific product cache
             await _cacheService.RemoveAsync($"product:{productId}");
@@ -37,7 +37,7 @@ namespace ElectricityShop.Infrastructure.Caching
         }
         
         /// <inheritdoc />
-        public async Task InvalidateProductsByCategoryAsync(int categoryId)
+        public async Task InvalidateProductsByCategoryAsync(Guid categoryId)
         {
             // Remove category-specific product caches
             await _cacheService.RemoveByPrefixAsync($"products:category:{categoryId}");

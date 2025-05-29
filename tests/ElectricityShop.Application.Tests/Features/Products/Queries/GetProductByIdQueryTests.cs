@@ -1,13 +1,9 @@
-using ElectricityShop.Application.Common.Interfaces; // For IRepository
 using ElectricityShop.Application.Features.Products.Queries;
 using ElectricityShop.Application.Features.Products.Queries.Handlers;
 using ElectricityShop.Domain.Entities;
+using ElectricityShop.Domain.Interfaces;
 using Microsoft.Extensions.Logging; // For ILogger
 using Moq;
-using System;
-using System.Collections.Generic; // For List
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace ElectricityShop.Application.Tests.Features.Products.Queries
@@ -21,19 +17,19 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
 
         private readonly Guid _productId = Guid.NewGuid();
         private readonly Guid _categoryId = Guid.NewGuid();
-        
+
         public GetProductByIdQueryTests()
         {
             _productRepositoryMock = new Mock<IRepository<Product>>();
             _categoryRepositoryMock = new Mock<IRepository<Category>>();
             _loggerMock = new Mock<ILogger<GetProductByIdQueryHandler>>();
-            
+
             _handler = new GetProductByIdQueryHandler(
-                _loggerMock.Object, 
-                _productRepositoryMock.Object, 
+                _loggerMock.Object,
+                _productRepositoryMock.Object,
                 _categoryRepositoryMock.Object);
         }
-        
+
         [Fact]
         public async Task Handle_ProductExists_ReturnsProductDto()
         {
@@ -48,24 +44,24 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
                 Images = new List<ProductImage>(), // Ensure collections are not null
                 Attributes = new List<ProductAttribute>() // Ensure collections are not null
             };
-            
+
             var category = new Category
             {
                 Id = _categoryId,
                 Name = "Test Category",
                 Description = "Test Category Description" // CS9035 fix
             };
-            
+
             _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(category); // CS1061 fix (part 1)
-                
+
             var query = new GetProductByIdQuery { ProductId = _productId }; // CS0117 fix: Use ProductId
-            
+
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal(_productId, result.Id);
@@ -75,7 +71,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
             _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()), Times.Once);
             _categoryRepositoryMock.Verify(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()), Times.Once);
         }
-        
+
         [Fact]
         public async Task Handle_ProductExists_CategoryPreloaded_ReturnsProductDto()
         {
@@ -84,7 +80,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
             {
                 Id = _categoryId,
                 Name = "Test Category",
-                Description = "Test Category Description" 
+                Description = "Test Category Description"
             };
             var product = new Product
             {
@@ -97,16 +93,16 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
                 Images = new List<ProductImage>(),
                 Attributes = new List<ProductAttribute>()
             };
-            
+
             _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             // No setup for _categoryRepositoryMock.GetByIdAsync needed if Category is preloaded in Product
-                
+
             var query = new GetProductByIdQuery { ProductId = _productId };
-            
+
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal(_productId, result.Id);
@@ -118,36 +114,24 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
         }
 
         [Fact]
-        public async Task Handle_ProductNotFound_ReturnsNull()
+        public async Task HandleProductNotFoundReturnsNull()
         {
             // Arrange
             var nonExistentProductId = Guid.NewGuid();
             _productRepositoryMock.Setup(r => r.GetByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Product)null);
-            
+
             // No need to setup _categoryRepositoryMock for this case, as product fetch is first
             // _categoryRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Category)null); // CS1061 fix (part 2) - not strictly needed here
-                
+
             var query = new GetProductByIdQuery { ProductId = nonExistentProductId }; // CS0117 fix
-            
+
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
-            
+
             // Assert
             Assert.Null(result);
             _productRepositoryMock.Verify(r => r.GetByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()), Times.Once);
         }
-        
-        // MockDbSet helper is no longer needed as we are using IRepository mocks
-        // private static Mock<DbSet<T>> MockDbSet<T>(IQueryable<T> data) where T : class
-        // {
-        //     var mock = new Mock<DbSet<T>>();
-        //     mock.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
-        //     mock.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
-        //     mock.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
-        //     mock.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
-            
-        //     return mock;
-        // }
     }
 }

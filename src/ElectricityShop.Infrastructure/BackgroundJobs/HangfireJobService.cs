@@ -1,8 +1,6 @@
 using ElectricityShop.Application.Common.Interfaces;
 using Hangfire;
-using System;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace ElectricityShop.Infrastructure.BackgroundJobs
 {
@@ -23,17 +21,31 @@ namespace ElectricityShop.Infrastructure.BackgroundJobs
         /// <summary>
         /// Enqueues a job to be executed in the background
         /// </summary>
-        public string EnqueueAsync<T>(Expression<Func<T, Task>> jobExpression)
+        public string Enqueue<T>(Func<T, Task> methodCall)
         {
-            return _backgroundJobClient.Enqueue<T>(jobExpression);
+            // Convert Func to Expression for Hangfire
+            Expression<Func<T, Task>> expression = t => methodCall(t);
+            return _backgroundJobClient.Enqueue<T>(expression);
         }
 
         /// <summary>
         /// Schedules a job to be executed at a specific time
         /// </summary>
-        public string ScheduleAsync<T>(Expression<Func<T, Task>> jobExpression, TimeSpan delay)
+        public string Schedule<T>(Func<T, Task> methodCall, TimeSpan delay)
         {
-            return _backgroundJobClient.Schedule<T>(jobExpression, delay);
+            // Convert Func to Expression for Hangfire
+            Expression<Func<T, Task>> expression = t => methodCall(t);
+            return _backgroundJobClient.Schedule<T>(expression, delay);
+        }
+
+        /// <summary>
+        /// Enqueues a job to be executed in the background with a specific ID
+        /// </summary>
+        public bool ContinueJobWith<T>(string parentJobId, Func<T, Task> methodCall)
+        {
+            // Convert Func to Expression for Hangfire
+            Expression<Func<T, Task>> expression = t => methodCall(t);
+            return _backgroundJobClient.ContinueJobWith<T>(parentJobId, expression);
         }
 
         /// <summary>
@@ -42,14 +54,6 @@ namespace ElectricityShop.Infrastructure.BackgroundJobs
         public string ScheduleAsync<T>(Expression<Func<T, Task>> jobExpression, DateTimeOffset enqueueAt)
         {
             return _backgroundJobClient.Schedule<T>(jobExpression, enqueueAt);
-        }
-
-        /// <summary>
-        /// Enqueues a job to be executed in the background with a specific ID
-        /// </summary>
-        public bool ContinueJobWith<T>(string parentJobId, Expression<Func<T, Task>> jobExpression)
-        {
-            return _backgroundJobClient.ContinueJobWith<T>(parentJobId, jobExpression);
         }
 
         public string AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Func<T, Task>> jobExpression, string cronExpression)

@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace ElectricityShop.Application.Common.Interfaces
@@ -11,7 +12,7 @@ namespace ElectricityShop.Application.Common.Interfaces
         /// Invalidates cache for a specific product.
         /// </summary>
         /// <param name="productId">ID of the product to invalidate cache for.</param>
-        Task InvalidateProductCacheAsync(int productId);
+        Task InvalidateProductCacheAsync(Guid productId);
 
         /// <summary>
         /// Invalidates cache for all products.
@@ -22,6 +23,6 @@ namespace ElectricityShop.Application.Common.Interfaces
         /// Invalidates cache for products in a specific category.
         /// </summary>
         /// <param name="categoryId">ID of the category to invalidate product cache for.</param>
-        Task InvalidateProductsByCategoryAsync(int categoryId);
+        Task InvalidateProductsByCategoryAsync(Guid categoryId);
     }
 }

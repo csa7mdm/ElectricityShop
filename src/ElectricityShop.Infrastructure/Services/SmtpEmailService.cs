@@ -1,11 +1,8 @@
 using ElectricityShop.Application.Common.Interfaces;
+using ElectricityShop.Domain.Interfaces;
 using FluentEmail.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ElectricityShop.Infrastructure.Services
 {
@@ -17,7 +14,7 @@ namespace ElectricityShop.Infrastructure.Services
         private readonly IFluentEmail _emailSender;
         private readonly EmailSettings _settings;
         private readonly ILogger<SmtpEmailService> _logger;
-        
+
         /// <summary>
         /// Initializes a new instance of the SmtpEmailService
         /// </summary>
@@ -30,22 +27,22 @@ namespace ElectricityShop.Infrastructure.Services
             _settings = options?.Value ?? throw new ArgumentNullException(nameof(options));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        
+
         /// <summary>
         /// Sends order confirmation email
         /// </summary>
         public async Task<EmailResult> SendOrderConfirmationAsync(
-            string recipientEmail, 
-            string recipientName, 
-            string orderNumber, 
-            List<OrderItemEmailModel> items, 
+            string recipientEmail,
+            string recipientName,
+            string orderNumber,
+            List<OrderItemEmailModel> items,
             decimal totalAmount)
         {
             try
             {
-                _logger.LogInformation("Sending order confirmation email for order {OrderNumber} to {RecipientEmail}", 
+                _logger.LogInformation("Sending order confirmation email for order {OrderNumber} to {RecipientEmail}",
                     orderNumber, recipientEmail);
-                
+
                 var email = _emailSender
                     .To(recipientEmail, recipientName)
                     .Subject($"Your Order Confirmation #{orderNumber}")
@@ -63,9 +60,9 @@ namespace ElectricityShop.Infrastructure.Services
                         StoreName = _settings.StoreName,
                         SupportEmail = _settings.SupportEmail
                     });
-                
+
                 var result = await email.SendAsync();
-                
+
                 if (result.Successful)
                 {
                     _logger.LogInformation("Order confirmation email sent successfully for order {OrderNumber}", orderNumber);
@@ -85,21 +82,21 @@ namespace ElectricityShop.Infrastructure.Services
                 return new EmailResult { Sent = false, ErrorMessage = ex.Message };
             }
         }
-        
+
         /// <summary>
         /// Sends payment failed notification email
         /// </summary>
         public async Task<EmailResult> SendPaymentFailedAsync(
-            string recipientEmail, 
-            string recipientName, 
-            string orderNumber, 
+            string recipientEmail,
+            string recipientName,
+            string orderNumber,
             string errorMessage)
         {
             try
             {
-                _logger.LogInformation("Sending payment failed email for order {OrderNumber} to {RecipientEmail}", 
+                _logger.LogInformation("Sending payment failed email for order {OrderNumber} to {RecipientEmail}",
                     orderNumber, recipientEmail);
-                
+
                 var email = _emailSender
                     .To(recipientEmail, recipientName)
                     .Subject($"Payment Failed for Order #{orderNumber}")
@@ -111,9 +108,9 @@ namespace ElectricityShop.Infrastructure.Services
                         SupportEmail = _settings.SupportEmail,
                         StoreName = _settings.StoreName
                     });
-                
+
                 var result = await email.SendAsync();
-                
+
                 if (result.Successful)
                 {
                     _logger.LogInformation("Payment failed email sent successfully for order {OrderNumber}", orderNumber);
@@ -134,7 +131,7 @@ namespace ElectricityShop.Infrastructure.Services
             }
         }
     }
-    
+
     /// <summary>
     /// Settings for email service
     /// </summary>
@@ -144,32 +141,32 @@ namespace ElectricityShop.Infrastructure.Services
         /// Sender email address
         /// </summary>
         public string SenderEmail { get; set; }
-        
+
         /// <summary>
         /// Sender display name
         /// </summary>
         public string SenderName { get; set; }
-        
+
         /// <summary>
         /// Store physical address
         /// </summary>
         public string StoreAddress { get; set; }
-        
+
         /// <summary>
         /// Store name
         /// </summary>
         public string StoreName { get; set; }
-        
+
         /// <summary>
         /// Support email address
         /// </summary>
         public string SupportEmail { get; set; }
-        
+
         /// <summary>
         /// Path to order confirmation email template
         /// </summary>
         public string OrderConfirmationTemplate { get; set; }
-        
+
         /// <summary>
         /// Path to payment failed email template
         /// </summary>

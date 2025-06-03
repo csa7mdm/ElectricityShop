@@ -56,7 +56,7 @@ namespace ElectricityShop.Infrastructure.Services
                 Status = order.Status,
                 OrderDate = order.OrderDate,
                 TotalAmount = order.TotalAmount,
-                Items = order.Items.Select(item => new OrderItemDto
+                Items = order.Items.Select(item => new Application.Common.Interfaces.OrderItemDto
                 {
                     ProductId = item.ProductId,
                     ProductName = item.ProductName,

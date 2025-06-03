@@ -1,12 +1,9 @@
-using System;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using ElectricityShop.Application.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using System.Text;
 
 namespace ElectricityShop.Infrastructure.Events
 {
@@ -76,11 +73,11 @@ namespace ElectricityShop.Infrastructure.Events
                     FailedAt = failedAt,
                     Processed = false
                 };
-                
+
                 // Add the failed message to the database
                 _dbContext.FailedMessages.Add(failedMessage);
                 await _dbContext.SaveChangesAsync(cancellationToken);
-                
+
                 _logger.LogInformation(
                     "Logged failed message {MessageId} of type {EventType}",
                     messageId, eventType);
@@ -91,7 +88,7 @@ namespace ElectricityShop.Infrastructure.Events
                     ex,
                     "Error logging failed message {MessageId} of type {EventType}: {ErrorMessage}",
                     messageId, eventType, ex.Message);
-                
+
                 throw;
             }
         }
@@ -111,12 +108,12 @@ namespace ElectricityShop.Infrastructure.Events
                 // Get the failed message from the database
                 var failedMessage = await _dbContext.FailedMessages
                     .FirstOrDefaultAsync(m => m.MessageId == messageId, cancellationToken);
-                
+
                 if (failedMessage == null)
                 {
                     return null;
                 }
-                
+
                 return new FailedMessageDto
                 {
                     MessageId = failedMessage.MessageId,
@@ -134,7 +131,7 @@ namespace ElectricityShop.Infrastructure.Events
                     ex,
                     "Error getting failed message {MessageId}: {ErrorMessage}",
                     messageId, ex.Message);
-                
+
                 throw;
             }
         }
@@ -154,42 +151,42 @@ namespace ElectricityShop.Infrastructure.Events
                 // Get the failed message from the database
                 var failedMessage = await _dbContext.FailedMessages
                     .FirstOrDefaultAsync(m => m.MessageId == messageId, cancellationToken);
-                
+
                 if (failedMessage == null)
                 {
                     _logger.LogWarning("Failed message {MessageId} not found", messageId);
                     return false;
                 }
-                
+
                 // Republish the message to the original exchange
                 using var channel = _connectionFactory.CreateChannel();
-                
+
                 var properties = channel.CreateBasicProperties();
                 properties.DeliveryMode = 2; // persistent
                 properties.ContentType = "application/json";
                 properties.MessageId = failedMessage.MessageId;
                 properties.Type = failedMessage.EventType;
                 properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-                
+
                 var body = Encoding.UTF8.GetBytes(failedMessage.Message);
-                
+
                 channel.BasicPublish(
                     exchange: failedMessage.Exchange,
                     routingKey: failedMessage.RoutingKey,
                     mandatory: true,
                     basicProperties: properties,
                     body: body);
-                
+
                 // Mark the failed message as processed
                 failedMessage.Processed = true;
                 failedMessage.ProcessedAt = DateTime.UtcNow;
-                
+
                 await _dbContext.SaveChangesAsync(cancellationToken);
-                
+
                 _logger.LogInformation(
                     "Requeued failed message {MessageId} of type {EventType}",
                     messageId, failedMessage.EventType);
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -198,7 +195,7 @@ namespace ElectricityShop.Infrastructure.Events
                     ex,
                     "Error requeuing failed message {MessageId}: {ErrorMessage}",
                     messageId, ex.Message);
-                
+
                 return false;
             }
         }

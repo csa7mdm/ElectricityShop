@@ -34,7 +34,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
         public async Task Handle_ProductExists_ReturnsProductDto()
         {
             // Arrange
-            var product = new Product
+            Product product = new Product
             {
                 Id = _productId,
                 Name = "Test Product",
@@ -45,16 +45,16 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
                 Attributes = new List<ProductAttribute>() // Ensure collections are not null
             };
 
-            var category = new Category
+            Category category = new Category
             {
                 Id = _categoryId,
                 Name = "Test Category",
                 Description = "Test Category Description" // CS9035 fix
             };
 
-            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId))
                 .ReturnsAsync(product);
-            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()))
+            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_categoryId))
                 .ReturnsAsync(category); // CS1061 fix (part 1)
 
             var query = new GetProductByIdQuery { ProductId = _productId }; // CS0117 fix: Use ProductId
@@ -68,8 +68,8 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
             Assert.Equal("Test Product", result.Name);
             Assert.Equal("Test Category", result.CategoryName); // Handler fetches category name
 
-            _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()), Times.Once);
-            _categoryRepositoryMock.Verify(r => r.GetByIdAsync(_categoryId, It.IsAny<CancellationToken>()), Times.Once);
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId), Times.Once);
+            _categoryRepositoryMock.Verify(r => r.GetByIdAsync(_categoryId), Times.Once);
         }
 
         [Fact]
@@ -94,7 +94,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
                 Attributes = new List<ProductAttribute>()
             };
 
-            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId))
                 .ReturnsAsync(product);
             // No setup for _categoryRepositoryMock.GetByIdAsync needed if Category is preloaded in Product
 
@@ -109,8 +109,8 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
             Assert.Equal("Test Product", result.Name);
             Assert.Equal("Test Category", result.CategoryName);
 
-            _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()), Times.Once);
-            _categoryRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never); // Verify category repo not called
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(_productId), Times.Once);
+            _categoryRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never); // Verify category repo not called
         }
 
         [Fact]
@@ -118,8 +118,9 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
         {
             // Arrange
             var nonExistentProductId = Guid.NewGuid();
-            _productRepositoryMock.Setup(r => r.GetByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Product)null);
+            Product? nullProduct = null;
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(nonExistentProductId))
+                .ReturnsAsync(() => nullProduct);
 
             // No need to setup _categoryRepositoryMock for this case, as product fetch is first
             // _categoryRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Category)null); // CS1061 fix (part 2) - not strictly needed here
@@ -131,7 +132,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Queries
 
             // Assert
             Assert.Null(result);
-            _productRepositoryMock.Verify(r => r.GetByIdAsync(nonExistentProductId, It.IsAny<CancellationToken>()), Times.Once);
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(nonExistentProductId), Times.Once);
         }
     }
 }

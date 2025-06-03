@@ -3,6 +3,7 @@ using Hangfire.Server;
 using Hangfire.States;
 using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
 using System;
 
 namespace ElectricityShop.Infrastructure.BackgroundJobs

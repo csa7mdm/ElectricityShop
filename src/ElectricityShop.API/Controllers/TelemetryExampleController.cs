@@ -14,11 +14,11 @@ namespace ElectricityShop.API.Controllers
     [Route("api/[controller]")]
     public class TelemetryExampleController : ControllerBase
     {
-        private readonly ILogger<TelemetryExampleController> _controllerLogger;
+        private readonly ILogger<TelemetryExampleController> _telemetryLogger;
 
         public TelemetryExampleController(ILogger<TelemetryExampleController> logger)
         {
-            _controllerLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _telemetryLogger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -27,7 +27,7 @@ namespace ElectricityShop.API.Controllers
         [HttpGet("product/{id}")]
         public IActionResult GetProduct(int id)
         {
-            _controllerLogger.LogInformation("Get product request for ID: {ProductId}", id);
+            _telemetryLogger.LogInformation("Get product request for ID: {ProductId}", id);
 
             // Track product view metric
             ApiMetrics.ProductViews.Add(1);
@@ -55,7 +55,7 @@ namespace ElectricityShop.API.Controllers
         [HttpGet("search")]
         public IActionResult SearchProducts([FromQuery] string query)
         {
-            _controllerLogger.LogInformation("Search products request with query: {Query}", query);
+            _telemetryLogger.LogInformation("Search products request with query: {Query}", query);
 
             // Track product search metric
             ApiMetrics.ProductSearches.Add(1);
@@ -80,12 +80,12 @@ namespace ElectricityShop.API.Controllers
             if (cacheHit)
             {
                 ApiMetrics.CacheHits.Add(1);
-                _controllerLogger.LogDebug("Cache hit for search: {Query}", query);
+                _telemetryLogger.LogDebug("Cache hit for search: {Query}", query);
             }
             else
             {
                 ApiMetrics.CacheMisses.Add(1);
-                _controllerLogger.LogDebug("Cache miss for search: {Query}", query);
+                _telemetryLogger.LogDebug("Cache miss for search: {Query}", query);
             }
 
             // Return some dummy results
@@ -106,7 +106,7 @@ namespace ElectricityShop.API.Controllers
         [Authorize]
         public IActionResult CreateOrder([FromBody] OrderRequest request)
         {
-            _controllerLogger.LogInformation("Create order request received from user {UserId}", User.Identity.Name);
+            _telemetryLogger.LogInformation("Create order request received from user {UserId}", User.Identity.Name);
 
             // Track order creation metric
             ApiMetrics.OrdersCreated.Add(1);
@@ -120,12 +120,12 @@ namespace ElectricityShop.API.Controllers
             ApiMetrics.RequestDuration.Record(stopwatch.ElapsedMilliseconds);
 
             // Track order amount for business metrics
-            TelemetryService.RecordOrder(request.TotalAmount);
+            TelemetryService.RecordOrder(request.OrderTotalAmount);
 
             // Track user activity
             TelemetryService.RecordUserActivity(User.Identity.Name);
 
-            return Ok(new { OrderId = Guid.NewGuid(), Status = "Created", TotalAmount = request.TotalAmount });
+            return Ok(new { OrderId = Guid.NewGuid(), Status = "Created", TotalAmount = request.OrderTotalAmount });
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace ElectricityShop.API.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] TelemetryLoginRequest request)
         {
-            _controllerLogger.LogInformation("Login attempt for user {Username}", request.Username);
+            _telemetryLogger.LogInformation("Login attempt for user {UserLoginName}", request.UserLoginName);
 
             // Simulate successful or failed login (80% success rate for demo)
             var rng = new Random();
@@ -143,13 +143,13 @@ namespace ElectricityShop.API.Controllers
             if (loginSuccessful)
             {
                 ApiMetrics.SuccessfulLogins.Add(1);
-                _controllerLogger.LogInformation("Successful login for user {Username}", request.Username);
+                _telemetryLogger.LogInformation("Successful login for user {UserLoginName}", request.UserLoginName);
                 return Ok(new { Token = "demo-token", Message = "Login successful" });
             }
             else
             {
                 ApiMetrics.FailedLogins.Add(1);
-                _controllerLogger.LogWarning("Failed login attempt for user {Username}", request.Username);
+                _telemetryLogger.LogWarning("Failed login attempt for user {UserLoginName}", request.UserLoginName);
                 return Unauthorized(new { Message = "Invalid credentials" });
             }
         }
@@ -179,5 +179,33 @@ namespace ElectricityShop.API.Controllers
                 }
             });
         }
+    }
+
+    /// <summary>
+    /// Example request model for telemetry login
+    /// </summary>
+    public class TelemetryLoginRequest
+    {
+        public string UserLoginName { get; set; }
+        public string Password { get; set; }
+    }
+
+    /// <summary>
+    /// Example request model for order creation
+    /// </summary>
+    public class OrderRequest
+    {
+        public List<OrderItem> Items { get; set; }
+        public decimal OrderTotalAmount { get; set; }
+    }
+
+    /// <summary>
+    /// Example order item model
+    /// </summary>
+    public class OrderItem
+    {
+        public int ProductId { get; set; }
+        public int Quantity { get; set; }
+        public decimal Price { get; set; }
     }
 }

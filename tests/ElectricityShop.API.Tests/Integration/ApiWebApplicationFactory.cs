@@ -36,62 +36,51 @@ namespace ElectricityShop.API.Tests.Integration
                     services.Remove(identityDbContextDescriptor);
                 }
 
-                // Remove real messaging registrations
-                var rabbitMQConnectionDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(ElectricityShop.Infrastructure.Messaging.RabbitMQ.RabbitMQConnection));
-
-                if (rabbitMQConnectionDescriptor != null)
+                // Mock the database contexts
+                services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    services.Remove(rabbitMQConnectionDescriptor);
-                }
-
-                var eventBusDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(ElectricityShop.Infrastructure.Messaging.RabbitMQ.EventBusRabbitMQ));
-
-                if (eventBusDescriptor != null)
-                {
-                    services.Remove(eventBusDescriptor);
-                }
-
-                // Directly create mocks without factory methods
-                // Avoiding optional parameters in expression trees
-                services.AddSingleton<ApplicationDbContext>(serviceProvider =>
-                {
-                    var options = new DbContextOptionsBuilder<ApplicationDbContext>().Options;
-                    var mock = new Mock<ApplicationDbContext>(options);
-                    return mock.Object;
+                    options.UseInMemoryDatabase(databaseName: "InMemoryTestDb");
                 });
 
-                services.AddSingleton<ElectricityShop.Infrastructure.Identity.Context.AppIdentityDbContext>(serviceProvider =>
+                services.AddDbContext<ElectricityShop.Infrastructure.Identity.Context.AppIdentityDbContext>(options =>
                 {
-                    var options = new DbContextOptionsBuilder<ElectricityShop.Infrastructure.Identity.Context.AppIdentityDbContext>().Options;
-                    var mock = new Mock<ElectricityShop.Infrastructure.Identity.Context.AppIdentityDbContext>(options);
-                    return mock.Object;
+                    options.UseInMemoryDatabase(databaseName: "InMemoryIdentityDb");
                 });
 
-                // Mock messaging services - avoid expression trees with optional arguments
+                // Mock messaging services
                 services.AddSingleton<ElectricityShop.Infrastructure.Messaging.RabbitMQ.RabbitMQConnection>(serviceProvider =>
                 {
-                    return CreateRabbitMQConnectionMock();
+                    var mock = new Mock<ElectricityShop.Infrastructure.Messaging.RabbitMQ.RabbitMQConnection>();
+                    mock.Setup(x => x.TryConnectAsync(It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(true);
+                    return mock.Object;
                 });
 
                 services.AddSingleton<ElectricityShop.Infrastructure.Messaging.RabbitMQ.EventBusRabbitMQ>(serviceProvider =>
                 {
-                    return CreateEventBusMock();
+                    var mock = new Mock<ElectricityShop.Infrastructure.Messaging.RabbitMQ.EventBusRabbitMQ>();
+                    mock.Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>()))
+                        .Returns(Task.CompletedTask);
+                    return mock.Object;
                 });
 
                 // Build the service provider
                 var sp = services.BuildServiceProvider();
 
-                // Create a scope to obtain a reference to the database contexts
+                // Create a scope to initialize the database
                 using (var scope = sp.CreateScope())
                 {
                     var scopedServices = scope.ServiceProvider;
+                    var db = scopedServices.GetRequiredService<ApplicationDbContext>();
                     var logger = scopedServices.GetRequiredService<ILogger<ApiWebApplicationFactory>>();
+
+                    // Ensure the database is created
+                    db.Database.EnsureCreated();
 
                     try
                     {
-                        // Seed the database with test data if needed
+                        // Initialize the database with test data if needed
+                        InitializeTestDatabase(db);
                     }
                     catch (Exception ex)
                     {
@@ -101,33 +90,9 @@ namespace ElectricityShop.API.Tests.Integration
             });
         }
 
-        // Helper methods to create mocks outside of expression trees
-        private static ElectricityShop.Infrastructure.Messaging.RabbitMQ.RabbitMQConnection CreateRabbitMQConnectionMock()
+        private static void InitializeTestDatabase(ApplicationDbContext context)
         {
-            // Create a mock without using expression trees with optional parameters
-            var mock = new Mock<ElectricityShop.Infrastructure.Messaging.RabbitMQ.RabbitMQConnection>();
-            
-            // Create a completed task outside the expression tree
-            Task<bool> completedTask = Task.FromResult(true);
-            
-            // Use the created task in the setup with CancellationToken parameter
-            mock.Setup(x => x.TryConnectAsync(It.IsAny<CancellationToken>())).Returns(completedTask);
-                
-            return mock.Object;
-        }
-
-        private static ElectricityShop.Infrastructure.Messaging.RabbitMQ.EventBusRabbitMQ CreateEventBusMock()
-        {
-            // Create a mock without using expression trees with optional parameters
-            var mock = new Mock<ElectricityShop.Infrastructure.Messaging.RabbitMQ.EventBusRabbitMQ>();
-            
-            // Create a completed task outside the expression tree
-            Task completedTask = Task.FromResult(true);
-            
-            // Use the created task in the setup with CancellationToken parameter
-            mock.Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>())).Returns(completedTask);
-                
-            return mock.Object;
+            // Add test data here as needed
         }
     }
 }

@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OrderStatus = ElectricityShop.Domain.Enums.OrderStatus;
 using Xunit;
 
 namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
@@ -90,9 +91,9 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
                     PostalCode = "12345",
                     Country = "USA"
                 },
-                Items = new List<OrderItemDto>
+                Items = new List<ElectricityShop.Application.Features.Orders.Commands.OrderItemDto>
                 {
-                    new OrderItemDto
+                    new ElectricityShop.Application.Features.Orders.Commands.OrderItemDto
                     {
                         ProductId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                         Quantity = 2
@@ -103,17 +104,19 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
             };
             
             // Set up the product find method
+            var testProduct = new Product
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Name = "Test Product",
+                Description = "Test Description",
+                Price = 9.99m,
+                StockQuantity = 100
+            };
+            
             _contextMock.Setup(c => c.Products.FindAsync(It.Is<object[]>(ids => 
                 ids[0].Equals(Guid.Parse("11111111-1111-1111-1111-111111111111"))), 
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Product
-                {
-                    Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                    Name = "Test Product",
-                    Description = "Test Description",
-                    Price = 9.99m,
-                    StockQuantity = 100
-                });
+                .ReturnsAsync(testProduct);
                 
             // Set up Orders collection to capture the added order
             var orders = new List<Order>();
@@ -135,11 +138,11 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
             
             // Verify items were added correctly
             Assert.Single(createdOrder.Items);
-            var item = createdOrder.Items[0];
-            Assert.Equal(Guid.Parse("11111111-1111-1111-1111-111111111111"), item.ProductId);
-            Assert.Equal(2, item.Quantity);
-            Assert.Equal(9.99m, item.UnitPrice);
-            Assert.Equal(19.98m, item.TotalPrice);
+            var orderItem = createdOrder.Items.First();
+            Assert.Equal(Guid.Parse("11111111-1111-1111-1111-111111111111"), orderItem.ProductId);
+            Assert.Equal(2, orderItem.Quantity);
+            Assert.Equal(9.99m, orderItem.UnitPrice);
+            Assert.Equal(19.98m, orderItem.UnitPrice * orderItem.Quantity);
             
             // Verify background jobs were enqueued
             _backgroundJobsMock.Verify(
@@ -159,7 +162,7 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
             Assert.NotNull(result);
             Assert.Equal(createdOrder.Id, result.OrderId);
             Assert.Equal(createdOrder.OrderNumber, result.OrderNumber);
-            Assert.Equal(OrderStatus.PaymentPending, result.Status);
+            Assert.Equal(ElectricityShop.Application.Features.Orders.Models.OrderStatus.PaymentPending, result.Status);
             Assert.Equal("job123", result.TrackingId);
             Assert.NotNull(result.EstimatedCompletion);
         }
@@ -179,9 +182,9 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
                     PostalCode = "12345",
                     Country = "USA"
                 },
-                Items = new List<OrderItemDto>
+                Items = new List<ElectricityShop.Application.Features.Orders.Commands.OrderItemDto>
                 {
-                    new OrderItemDto
+                    new ElectricityShop.Application.Features.Orders.Commands.OrderItemDto
                     {
                         ProductId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                         Quantity = 101 // More than available stock
@@ -226,9 +229,9 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
                     PostalCode = "12345",
                     Country = "USA"
                 },
-                Items = new List<OrderItemDto>
+                Items = new List<ElectricityShop.Application.Features.Orders.Commands.OrderItemDto>
                 {
-                    new OrderItemDto
+                    new ElectricityShop.Application.Features.Orders.Commands.OrderItemDto
                     {
                         ProductId = Guid.Parse("99999999-9999-9999-9999-999999999999"), // Non-existent product
                         Quantity = 2
@@ -239,10 +242,11 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
             };
             
             // Set up the product find method to return null
+            Product? nullProduct = null;
             _contextMock.Setup(c => c.Products.FindAsync(It.Is<object[]>(ids => 
                 ids[0].Equals(Guid.Parse("99999999-9999-9999-9999-999999999999"))), 
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Product)null);
+                .ReturnsAsync(nullProduct);
                 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -259,9 +263,9 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
             {
                 UserId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
                 ShippingAddress = new AddressDto { Line1 = "123 Main St" },
-                Items = new List<OrderItemDto>
+                Items = new List<ElectricityShop.Application.Features.Orders.Commands.OrderItemDto>
                 {
-                    new OrderItemDto
+                    new ElectricityShop.Application.Features.Orders.Commands.OrderItemDto
                     {
                         ProductId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                         Quantity = 2
@@ -296,9 +300,9 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
                 x => x.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error creating order")),
+                    It.Is<It.IsAnyType>(v => v.ToString().Contains("Error creating order")),
                     It.Is<DbUpdateException>(ex => ex == dbException),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
         
@@ -318,8 +322,8 @@ namespace ElectricityShop.Application.Tests.Features.Orders.Commands.Handlers
         {
             public TestDbContext(DbContextOptions options) : base(options) { }
             
-            public DbSet<Product> Products { get; set; }
-            public DbSet<Order> Orders { get; set; }
+            public DbSet<Product> Products { get; set; } = null!;
+            public DbSet<Order> Orders { get; set; } = null!;
         }
     }
 }

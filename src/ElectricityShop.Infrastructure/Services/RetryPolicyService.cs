@@ -4,6 +4,7 @@ using Polly.Retry;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient; // Added for SqlException
 
 namespace ElectricityShop.Infrastructure.Services
 {
@@ -29,7 +30,7 @@ namespace ElectricityShop.Infrastructure.Services
         {
             return Policy
                 .Handle<Microsoft.EntityFrameworkCore.DbUpdateException>()
-                .Or<System.Data.SqlClient.SqlException>()
+                .Or<SqlException>()
                 .WaitAndRetryAsync(
                     3,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),

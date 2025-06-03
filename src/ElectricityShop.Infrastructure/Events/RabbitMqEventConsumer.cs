@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client; // Ensuring this line is present as per instruction
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace ElectricityShop.Infrastructure.Events
@@ -25,7 +25,7 @@ namespace ElectricityShop.Infrastructure.Events
         private readonly RabbitMqSettings _settings;
         private readonly Dictionary<string, Type> _eventTypes;
         private readonly ILogger<RabbitMqEventConsumer> _logger;
-        private IModel _channel;
+        private RabbitMQ.Client.IModel _channel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RabbitMqEventConsumer"/> class
@@ -74,8 +74,11 @@ namespace ElectricityShop.Infrastructure.Events
 
                 // Start consuming from the main queue
                 var consumer = new AsyncEventingBasicConsumer(_channel);
-                consumer.Received += async (model, ea) => 
-                    await ProcessMessageAsync(ea, queueName, retryQueueName, errorQueueName, routingKey, stoppingToken);
+                consumer.Received += (model, ea) =>
+                {
+                    _ = ProcessMessageAsync(ea, queueName, retryQueueName, errorQueueName, routingKey, stoppingToken);
+                    return Task.CompletedTask;
+                };
 
                 _channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
                 

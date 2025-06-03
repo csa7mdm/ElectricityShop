@@ -17,7 +17,7 @@ namespace ElectricityShop.Infrastructure.Events
         private readonly RabbitMqConnectionFactory _connectionFactory;
         private readonly RabbitMqSettings _settings;
         private readonly ILogger<RabbitMqEventBus> _logger;
-        private IModel _channel;
+        private RabbitMQ.Client.IModel _channel;
         private bool _disposed;
 
         /// <summary>

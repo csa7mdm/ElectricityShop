@@ -36,7 +36,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Commands
         public async Task Handle_ValidCommand_UpdatesProduct()
         {
             // Arrange
-            var product = new Product
+            Product product = new Product
             {
                 Id = _productId,
                 Name = "Old Name",
@@ -47,12 +47,12 @@ namespace ElectricityShop.Application.Tests.Features.Products.Commands
                 IsActive = true
             };
 
-            var category = new Category { Id = _categoryId, Name = "Old Category", Description = "Desc" };
-            var newCategory = new Category { Id = _newCategoryId, Name = "New Category", Description = "Desc" };
+            Category category = new Category { Id = _categoryId, Name = "Old Category", Description = "Desc" };
+            Category newCategory = new Category { Id = _newCategoryId, Name = "New Category", Description = "Desc" };
 
-            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId, It.IsAny<CancellationToken>()))
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(_productId))
                 .ReturnsAsync(product);
-            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_newCategoryId, It.IsAny<CancellationToken>()))
+            _categoryRepositoryMock.Setup(r => r.GetByIdAsync(_newCategoryId))
                 .ReturnsAsync(newCategory);
 
             var command = new UpdateProductCommand
@@ -70,7 +70,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Commands
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            Assert.True(result); // Assuming handler returns bool
+            Assert.True(result);
 
             // Verify product was updated
             Assert.Equal("New Name", product.Name);
@@ -79,15 +79,16 @@ namespace ElectricityShop.Application.Tests.Features.Products.Commands
             Assert.Equal(20, product.StockQuantity);
             Assert.Equal(_newCategoryId, product.CategoryId);
 
-            _productRepositoryMock.Verify(r => r.UpdateAsync(product, It.IsAny<CancellationToken>()), Times.Once);
+            _productRepositoryMock.Verify(r => r.UpdateAsync(product), Times.Once);
         }
 
         [Fact]
         public async Task Handle_ProductNotFound_ReturnsFalse()
         {
             // Arrange
-            _productRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Product)null);
+            Product? nullProduct = null;
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(() => nullProduct);
 
             var command = new UpdateProductCommand
             {
@@ -106,7 +107,7 @@ namespace ElectricityShop.Application.Tests.Features.Products.Commands
             // Assert
             Assert.False(result);
 
-            _productRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+            _productRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace ElectricityShop.Infrastructure.Events
         private readonly IServiceProvider _serviceProvider;
         private readonly RabbitMqSettings _settings;
         private readonly ILogger<DeadLetterQueueProcessor> _logger;
-        private IModel _channel;
+        private RabbitMQ.Client.IModel _channel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeadLetterQueueProcessor"/> class
@@ -61,7 +61,7 @@ namespace ElectricityShop.Infrastructure.Events
                 var errorQueueName = $"electricity_shop.{routingKey}.error";
 
                 // Start consuming from the error queue
-                var consumer = new AsyncEventingBasicConsumer((IChannel)_channel);
+                var consumer = new AsyncEventingBasicConsumer(_channel);
                 consumer.ReceivedAsync += async (model, ea) =>
                     await ProcessDeadLetterMessageAsync(ea, errorQueueName, stoppingToken);
 

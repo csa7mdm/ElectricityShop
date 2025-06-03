@@ -78,7 +78,7 @@ namespace ElectricityShop.Infrastructure.Events
         /// Creates a new channel from the connection
         /// </summary>
         /// <returns>A new RabbitMQ channel</returns>
-        public IModel CreateChannel()
+        public RabbitMQ.Client.IModel CreateChannel()
         {
             var connection = GetConnection();
             var channel = connection.CreateModel();

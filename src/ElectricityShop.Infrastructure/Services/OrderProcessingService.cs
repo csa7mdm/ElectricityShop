@@ -72,7 +72,7 @@ namespace ElectricityShop.Infrastructure.Services
                     }
                     
                     // Verify order is in correct state
-                    if (order.Status != OrderStatus.PaymentPending)
+                    if (!order.Status.Equals(OrderStatus.PaymentPending))
                     {
                         _logger.LogWarning("Cannot process payment for order {OrderId} in status {Status}", 
                             orderId, order.Status);
@@ -242,7 +242,7 @@ namespace ElectricityShop.Infrastructure.Services
                     }
                     
                     // Skip if order failed or not paid
-                    if (order.Status != OrderStatus.PaymentProcessed)
+                    if (!order.Status.Equals(OrderStatus.PaymentProcessed))
                     {
                         _logger.LogWarning("Skipping inventory update for order {OrderId} in status {Status}", 
                             orderId, order.Status);
@@ -327,7 +327,7 @@ namespace ElectricityShop.Infrastructure.Services
                     }
                     
                     // Only finalize orders that have been payment processed
-                    if (order.Status == OrderStatus.PaymentProcessed)
+                    if (order.Status.Equals(OrderStatus.PaymentProcessed))
                     {
                         order.Status = OrderStatus.Fulfilled;
                         order.FulfilledAt = DateTime.UtcNow;
